@@ -1,4 +1,4 @@
 keepconf
 ========
 
-Keepconf log modifications over files into a git repo, like etckeeper and changeconf but more easy and python powered.
+Keepconf is a tool for backup and track files from remote hosts. It uses rsync and git for the purpose and was inspired in etckeeper and changeconf.
