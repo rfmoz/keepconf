@@ -1,0 +1,76 @@
+#!/bin/sh
+# -*- sh -*-
+
+: << =cut
+
+=head1 NAME
+
+keepconf_time -Indicate the times of keepconf execution
+
+=head1 APPLICABLE SYSTEMS
+Linux box with keepconf installed.
+
+=head1 CONFIGURATION
+
+[keepconf_*]
+env.file /var/keepconf/keepconf-mon.csv
+
+=head1 AUTHOR
+
+Ricardo Fraile <rfrail3@yahoo.es>
+
+=head1 LICENSE
+
+GPLv2
+
+=head1 VERSION
+v.1.0.0
+
+=head1 MAGICK MARKERS
+
+ #%# family=auto
+ #%# capabilities=autoconf
+
+=cut
+
+. $MUNIN_LIBDIR/plugins/plugin.sh
+
+
+if [ "$1" = "autoconf" ]; then
+	echo yes 
+	exit 0
+fi
+
+if [ "$1" = "config" ]; then
+
+	echo 'graph_title Keepconf times'
+	echo 'graph_args --base 1000 -l 0 '
+	echo 'graph_vlabel Hosts'
+	echo 'graph_scale no'
+	echo 'graph_category keepconf'
+	echo 'graph_info Indicate the times of a keepconf execution.'
+
+        echo "fetch.label Fetch"
+        echo "fetch.type GAUGE"
+        echo "fetch.min 0"
+
+        echo "commit.label Commit"
+        echo "commit.type GAUGE"
+        echo "commit.min 0"
+
+        echo "total.label Total"
+        echo "total.type GAUGE"
+        echo "total.min 0"
+
+	exit 0
+fi
+
+FET=`cat $file  | grep 'FETCH-TIME' | awk -F, '{print $2}' | tr -d '"'`
+COM=`cat $file  | grep 'COMMIT-TIME' | awk -F, '{print $2}' | tr -d '"'`
+TOT=`cat $file  | grep 'TOTAL-TIME' | awk -F, '{print $2}' | tr -d '"'`
+
+
+
+echo "fetch.value `echo ${FET}`"
+echo "commit.value `echo ${COM}`"
+echo "total.value `echo ${TOT}`"
