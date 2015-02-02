@@ -678,7 +678,7 @@ if fetch or commit:
     print('- Completed in: %.2f seconds' % total_time)
 
 if f_monitor:
-    vprint('Writing time to monitor file ', f_monitor)
+    vprint('Writing stats to monitor file ', f_monitor)
     try:
         if hosts_bad:
             hosts_bad_list = ","+ ','.join(['\"'+ x +'\"' for x in hosts_bad])
