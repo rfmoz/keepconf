@@ -554,7 +554,7 @@ if fetch:
             f_walk.write('+ ' + e + '\n')
         f_walk.write('- *\n')
 
-        if f_walk:  # Offset files
+        if f_walk:  # Offset file
             f_walk.seek(0)
 
         for srvname in cfg_hosts:  # Creating directory for each host

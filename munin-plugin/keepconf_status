@@ -65,11 +65,9 @@ if [ "$1" = "config" ]; then
 	exit 0
 fi
 
-OK=`cat $file  | grep 'OK' | awk -F, '{print $2}' | tr -d '"'`
-BAD=`cat $file  | grep 'BAD' | awk -F, '{print $2}' | tr -d '"'`
-NOT=`cat $file  | grep 'NOT' | awk -F, '{print $2}' | tr -d '"'`
-
-
+OK=`cat $file  | grep 'KPCNF-OK' | awk -F, '{print $2}' | tr -d '"'`
+BAD=`cat $file  | grep 'KPCNF-BAD' | awk -F, '{print $2}' | tr -d '"'`
+NOT=`cat $file  | grep 'KPCNF-NOT' | awk -F, '{print $2}' | tr -d '"'`
 
 echo "ok.value `echo ${OK}`"
 echo "bad.value `echo ${BAD}`"

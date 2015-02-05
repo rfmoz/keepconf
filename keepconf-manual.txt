@@ -320,7 +320,8 @@ get some type of information after each execution.
 | Hosts configuration file format |
 ===================================
 
-Each host file located into "D_Conf" directory can have this format:
+Each host file located into "D_Conf" directory need to end with a '.cfg'
+extension and can have this format:
 
 [Main]
 Includes = example_dir/example1.cfg, example_dir/example2.cfg

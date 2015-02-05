@@ -69,8 +69,6 @@ FET=`cat $file  | grep 'FETCH-TIME' | awk -F, '{print $2}' | tr -d '"'`
 COM=`cat $file  | grep 'COMMIT-TIME' | awk -F, '{print $2}' | tr -d '"'`
 TOT=`cat $file  | grep 'TOTAL-TIME' | awk -F, '{print $2}' | tr -d '"'`
 
-
-
 echo "fetch.value `echo ${FET}`"
 echo "commit.value `echo ${COM}`"
 echo "total.value `echo ${TOT}`"
