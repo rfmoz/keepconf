@@ -3,7 +3,7 @@
                           Configuration Manual
                          ----------------------
                              version 0.9.25
-                             ricardo fraile
+                             Ricardo Fraile
                                2015/02/05
 
 
@@ -121,9 +121,9 @@ There are only a few command line options :
 
 
 -s, --silent
-  When rsync fetchs files, some information about the state of the files and the
-  operations that it do are printed trought the terminal. For silent rsync stdout
-  and stderr use this option.
+  When rsync fetchs files, some information about the state of the files and
+  the operations that it do are printed trought the terminal. For silent rsync
+  stdout and stderr use this option.
 
   Examples:
          keepconf -s
