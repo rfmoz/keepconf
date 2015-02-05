@@ -28,7 +28,7 @@ from collections import OrderedDict
 
 start_time = time.time()
 
-version = '0.9.24'
+version = '0.9.25'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
@@ -516,17 +516,25 @@ if fetch:
             except:
                 vprint('Max_Size herietage: ', max_size)
 
+            line_range = []
             try:  # Parse includes/excludes
                 for line, _ in parser.items('Files'):
                     line = (sanitize(line))
-                    if line.startswith('!'):
-                        vprint('Writting to exclude tmp file: ', line[1:].rstrip())
-                        cfg_ex.append(line[1:])
-                    elif line.startswith('$'):
-                        cfg_frz.append(line[1:])
+                    if detect_range(line):  # Detect range inside
+                        vprint('Range detected: ', line)
+                        line_range = expand_hostname_range(line)  # Expand hostnames
                     else:
-                        vprint('Writting to include tmp file: ', line.rstrip())
-                        cfg_in.append(line)
+                        line_range.append(line)
+                    for lpath in line_range:  # Detect each type of line
+                        if lpath.startswith('!'):
+                            vprint('Exclude: ', lpath[1:].rstrip())
+                            cfg_ex.append(lpath[1:])
+                        elif lpath.startswith('$'):
+                            vprint('Force: ', lpath[1:].rstrip())
+                            cfg_frz.append(lpath[1:])
+                        else:
+                            vprint('Include: ', lpath.rstrip())
+                            cfg_in.append(lpath)
             except Exception as e:
                 vprint('WARNING parsing Files section in: ' + j + ' ' + str(e))
 
