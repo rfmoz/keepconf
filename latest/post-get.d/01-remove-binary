@@ -4,8 +4,8 @@
 #
 # receive a call: name-of-the-script arg1=D_Conf arg2=D_Dest
 
-echo $1 # Argument 1
-echo $2 # Argument 2
+#echo $1 # Argument 1
+#echo $2 # Argument 2
 
 # Uncomment following "exit" line for avoid executing this file
 #exit
