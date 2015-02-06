@@ -445,6 +445,24 @@ execution time:
         keepconf &> /var/log/keepconf.log  # Redirect stdout and stderr
 
 
+======================
+| Schedule execution |
+======================
+
+For have a automate backup with a log, add this line to the cron daemon:
+15 06 * * * keepconf &> /var/log/keepconf.log
+
+And a file called "keepconf" to /etc/logrotate.d with this content for
+rotate the logs:
+
+/var/log/keepconf.log {
+  rotate 12
+  monthly
+  compress
+  missingok
+}
+
+
 ================
 | Some Toughts |
 ================

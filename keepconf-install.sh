@@ -53,4 +53,5 @@ cp ${F_TMP1}/latest/hosts/grp/* ${D_CNF}/hosts/grp/
 cd ${D_CNF} && ls
 
 echo "Instalation Complete, configure as your needs"
+echo "Don't forget a entry line in cron for schedule the process"
 echo "Enjoy!"
