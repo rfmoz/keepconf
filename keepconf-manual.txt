@@ -36,6 +36,7 @@ Almost these version of the following software:
       subprocess, distutils, collections
    rsync 3.0
    git 1.7
+   file 5.0
 
 A ssh-keys connection to the target hosts. Password promt is not supported.
 
@@ -314,6 +315,9 @@ git as all other content.
 
 - Put a script with an information report inside "Post_Commit" directory for
 get some type of information after each execution.
+
+- Delete especial and binary files for avoid commit them. Actually the script
+it is included into "post-commit.d" directory at the github repo.
 
 
 ===================================
