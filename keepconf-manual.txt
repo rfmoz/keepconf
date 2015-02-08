@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 0.9.25
-                             Ricardo Fraile
-                               2015/02/05
+                             version 0.9.30
+                               Ricardo F.
+                               2015/02/08
 
 
 
@@ -163,8 +163,8 @@ There are only a few command line options :
 ======================
 
 Inside the configuration file, anything following a sharp ('#'), semicolon 
-(';') or comma character (',') is ignored.
-Take care of the space character, do not use it inside variables.
+(';') or comma character (',') is ignored. Space caracter is allowed, but
+if is possible, avoid it.
 
 [Main]
   Section for general variables. The following are available inside here:
@@ -345,8 +345,8 @@ $/home/user1/.bashrc
 
 Anything following a sharp ('#') and a semicolon (';') is ignored. A comma
 character (',') splits content only in "Includes" variable, in other cases,
-the following characters are ignored.
-Take care of the space character, do not use it inside variables.
+the following characters are ignored. Space character is allowed, but if is
+possible, avoid its use.
 
 The section headers '[Main]', '[Hosts]' or '[Files]' are a must before 
 include their respective variables. Only one hosts must be defined for 
@@ -404,21 +404,18 @@ considering the file valid, the other sections and variables are optional.
 [Hosts]
   Section for define a lists of hosts. One per line. Complete dns hostnames 
   and IP are allowed.
-  It is available the use of ranges defined into parenthesis (1-25)
 
   Examples:
          [Hosts]
          host1.prod
          192.168.5.12
          web-tier(1-10).prod.company
+         webs.*.company
+         web?.prod.company
 
 
 [Files]
   Section for define a lists of paths. One per line.
-  Its available the use of asterisk '*' for willcard match and the use of
-  ranges defined into parenthesis (1-25).
-  By default, paths ended in '/' fetch all content inside it only, if ends with
-  '/*' fetch all content inside it recursively.
   Its possible to include, exclude or force paths:
       Include - Any character before.
       Exclude - A '!' character must be before.
@@ -471,9 +468,19 @@ rotate the logs:
 | Some Toughts |
 ================
 
-The use of ranges with parenthesis '(...)' is forced in opposite of usual
-brackets '[...]' because it can make some problems with the section
+Into '[Hosts]' and '[Files]' sections its available the use of asterisk '*'
+and interrogation '?' for willcard matching and the use of ranges defined into
+parenthesis (1-25).
+
+A third argument can be passed to the range parenthesis (1-25-2) for change
+the step.
+
+The use of ranges with parenthesis '(.-.)' is forced in opposite of usual
+brackets '[.-.]' because it can makes some problems with the section
 definition.
+
+By default, paths ended in '/' fetch all content inside it only, if ends with
+'/*' fetch all content inside it recursively.
 
 A munin pluging is written for graph the reports of keepconf, look for it into
 the keepconf github account for get it.

@@ -17,9 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys, optparse, os, glob, time, time, string, re
+import sys, optparse, os, glob, time, time, string, re, tempfile
 from ConfigParser import ConfigParser
-from tempfile import mkstemp
 from subprocess import call
 from distutils.util import strtobool
 from distutils.dir_util import mkpath
@@ -28,7 +27,7 @@ from collections import OrderedDict
 
 start_time = time.time()
 
-version = '0.9.25'
+version = '0.9.30'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
@@ -121,8 +120,8 @@ def expand_hostname_range(line=None):
 
 
 def sanitize(text_value):  # Remove especial characters
-    excluded = "[' ',\&,\',\",\;,\,,\?,\|,\<,\>]"
-    resultd = re.sub(excluded, '', (text_value.strip('"').strip('\'').split('#', 1)[0].split(';', 1)[0].split(',', 1)[0]))
+    excluded = "[\&,\',\",\;,\,,\|,\<,\>]"
+    resultd = re.sub(excluded, '', (string.strip(text_value.split('#', 1)[0].split(';', 1)[0].split(',', 1)[0])))
     if resultd:
         return resultd
     else:
@@ -150,6 +149,7 @@ def extract_walk(cfg_in_):
         walk_lst.append(g)
         paths_lst += walk_lst
     return list(OrderedDict.fromkeys(paths_lst))
+
 
 # Some basic test for avoid annoying errors
 try:
@@ -425,7 +425,7 @@ if fetch:
         cfg_includes, cfg_hosts, cfg_in, cfg_ex, cfg_frz = [], [], [], [], []
 
         try:   # Temporary files for include/exclude  to rsync
-            _, f_tmp_walk = mkstemp()
+            _, f_tmp_walk = tempfile.mkstemp()
             f_walk = open(f_tmp_walk, 'w')
 
         except Exception as e:
@@ -470,7 +470,7 @@ if fetch:
                 cfg_hosts = cfg_hosts + expand_hostname_range(re_hosts)  # Expand hostnames
                 cfg_hosts.remove(re_hosts)  # Remove range from list
 
-        cfg_hosts = set(cfg_hosts)  # Remove duplicate names
+        cfg_hosts = sorted(set(cfg_hosts))  # Remove duplicate names and order
         vprint('Lists of hosts: ', cfg_hosts)
 
         for j in cfg_includes:  # Process include files
@@ -538,6 +538,10 @@ if fetch:
             except Exception as e:
                 vprint('WARNING parsing Files section in: ' + j + ' ' + str(e))
 
+	cfg_in=sorted(set(cfg_in))  # Clean duplicates and order
+	cfg_ex=sorted(set(cfg_ex))
+	cfg_frz=sorted(set(cfg_frz))
+
         paths_lst_in = extract_walk(cfg_in)
         vprint('Include walk for: '+str(cfg_in)+str(paths_lst_in))
 
@@ -556,7 +560,7 @@ if fetch:
 
         if f_walk:  # Offset file
             f_walk.seek(0)
-
+        
         for srvname in cfg_hosts:  # Creating directory for each host
             try:
                 final_path = d_dest + cfg_directory + srvname
