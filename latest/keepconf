@@ -28,7 +28,7 @@ except Exception as e:
 
 start_time = time.time()
 
-version = '0.9.30'
+version = '0.9.31'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
@@ -161,13 +161,13 @@ except:
     sys.exit('ERROR testing python version')
 
 try:
-    if call_silent(['rsync', '--version'], '/tmp/'):
+    if call_silent(('rsync', '--version'), '/tmp/'):
         vprint('Rsync exists')
 except:
     sys.exit('ERROR rsync not execute correctly in test. Maybe not installed')
 
 try:
-    if call_silent(['git', '--version'], '/tmp/'):
+    if call_silent(('git', '--version'), '/tmp/'):
         vprint('Git exists')
 except:
     sys.exit('ERROR git not execute correctly in test. Maybe not installed')
@@ -300,7 +300,7 @@ except:
 
 try:  # Getting Repo variable
     repo_name = sanitize(parser.get('VCS', 'Repo'))
-    if repo_name.lower() in ['false', '0', 'not']:
+    if repo_name.lower() in ('false', '0', 'not'):
         repo_name = False
     vprint('Repo value:', repo_name)
 except:
@@ -328,7 +328,7 @@ except Exception as e:
 try:  # Getting Commit variable
     if options.commit:
         commit = sanitize(parser.get('VCS', 'Commit'))
-        if commit.lower() in ['false', '0', 'not']:
+        if commit.lower() in ('false', '0', 'not'):
             commit = False
         else:
             raise
@@ -342,7 +342,7 @@ except:
 try:  # Getting Fetch variable
     if options.commitonly:
         fetch = sanitize(parser.get('Sync', 'Fetch'))
-        if fetch.lower() in ['false', '0', 'not']:
+        if fetch.lower() in ('false', '0', 'not'):
             fetch = False
         else:
             raise
@@ -355,7 +355,7 @@ except:
 
 try:  # Getting Monitor file variable
     f_monitor = os.path.normpath(sanitize(parser.get('Main', 'Monitor_File')))
-    if f_monitor.lower() in ['false', '0', 'not']:
+    if f_monitor.lower() in ('false', '0', 'not'):
         f_monitor = False
     else:  # Clean monitor file
         with open(f_monitor, "w"):
@@ -367,7 +367,7 @@ except:
 
 try:  # Getting Monitor Hosts variable
     f_host_mon = sanitize(parser.get('Main', 'Monitor_Hosts'))
-    if f_host_mon.lower() in ['false', '0', 'not']:
+    if f_host_mon.lower() in ('false', '0', 'not'):
         f_host_mon = False
     else:
         raise
@@ -385,7 +385,7 @@ if options.gitinit:  # Parse initialize option
                     vprint('Avoid initializating folder with .git directory')
                     sys.exit(0)
             sys.stdout.flush()
-            call(['git', 'init', d_dest])
+            call(('git', 'init', d_dest))
             sys.stdout.flush()
         except Exception as e:
             sys.exit('ERROR local repository not initializated: '+ str(e))
@@ -399,7 +399,7 @@ if options.gitinit:  # Parse initialize option
                     sys.exit(0)
             print 'Clonning repository...'
             sys.stdout.flush()
-            call(['git', 'clone', repo_name, d_dest])
+            call(('git', 'clone', repo_name, d_dest))
             sys.stdout.flush()
         except Exception as e:
             sys.exit('ERROR clonning remote repository: '+ str(e))
@@ -497,7 +497,7 @@ if fetch:
 
             try:  # Parse Monitor
                 host_mon = sanitize(parser.get('Main', 'Monitor'))
-                if host_mon.lower() in ['false', '0', 'not', '']:
+                if host_mon.lower() in ('false', '0', 'not', ''):
                     host_mon = False
                 else:
                     host_mon = True
@@ -578,7 +578,7 @@ if fetch:
             # Syncing files
             vprint('Calling: rsync', '-'+rsync_opt, '--progress', '--delete-excluded', '--timeout='+rsync_timeout, '--ignore-errors', '--max-size='+max_size, '--include-from=' + f_walk.name, '--prune-empty-dirs', rsync_user+'@'+srvname+':/', final_path)
             # For modify rsync call, the place is the following line (and the line above for verbose output):
-            rsync_call = ['rsync', '-'+rsync_opt, '--progress', '--delete-excluded', '--timeout='+rsync_timeout, '--ignore-errors', '--max-size='+max_size, '--include-from=' + f_walk.name, '--prune-empty-dirs', rsync_user+'@'+srvname+':/', final_path]
+            rsync_call = ('rsync', '-'+rsync_opt, '--progress', '--delete-excluded', '--timeout='+rsync_timeout, '--ignore-errors', '--max-size='+max_size, '--include-from=' + f_walk.name, '--prune-empty-dirs', rsync_user+'@'+srvname+':/', final_path)
             try:
                 sys.stdout.flush()
                 if options.silent:
@@ -640,28 +640,28 @@ if commit and repo_name:
         try:
             sys.stdout.flush()
             if options.xilent:
-                call_silent(['git', 'add', d_dest+'*'], d_dest)
-                call_silent(['git', 'commit', '-am', message], d_dest)
+                call_silent(('git', 'add', d_dest+'*'), d_dest)
+                call_silent(('git', 'commit', '-am', message), d_dest)
             else:
-                call(['git', 'add', d_dest+'*'], cwd=d_dest)
-                call(['git', 'commit', '-am', message], cwd=d_dest)
+                call(('git', 'add', d_dest+'*'), cwd=d_dest)
+                call(('git', 'commit', '-am', message), cwd=d_dest)
         except Exception as e:
             sys.stdout.flush()
             sys.exit('ERROR committing into local repository: ' + str(e))
     else:
         # print '- Updating remote repository' # For avoid problems
-        # call(['git', 'pull'], cwd=d_dest)
+        # call(('git', 'pull'), cwd=d_dest)
         print '- Committing into remote repository'
         try:
             sys.stdout.flush()
             if options.xilent:
-                call_silent(['git', 'add', '--all'], d_dest)
-                call_silent(['git', 'commit', '-am', message], d_dest)
-                call_silent(['git', 'push'], d_dest)
+                call_silent(('git', 'add', '--all'), d_dest)
+                call_silent(('git', 'commit', '-am', message), d_dest)
+                call_silent(('git', 'push'), d_dest)
             else:
-                call(['git', 'add', '--all'], cwd=d_dest)
-                call(['git', 'commit', '-am', message], cwd=d_dest)
-                call(['git', 'push'], cwd=d_dest)
+                call(('git', 'add', '--all'), cwd=d_dest)
+                call(('git', 'commit', '-am', message), cwd=d_dest)
+                call(('git', 'push'), cwd=d_dest)
         except Exception as e:
             sys.stdout.flush()
             sys.exit('ERROR committing into remote repository: ' + str(e))

@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 0.9.30
+                             version 0.9.31
                                Ricardo F.
-                               2015/02/08
+                               2015/02/10
 
 
 
