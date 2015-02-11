@@ -243,10 +243,11 @@ if is possible, avoid it.
 
   Rsync_Opt=
     Common options for pass to rsync command. They must be a compact list
-    like the example.
+    like the example. By default:
+      archive, recursive, preserve hard links, verbose, compress, copy links
     
     Examples:
-           Rsync_Opt = arHvz  # (Default)
+           Rsync_Opt = arHvzL  # (Default)
            Rsync_Opt = ar
            Rsync_Opt = v
 

@@ -32,7 +32,7 @@ version = '0.9.31'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
-rsync_opt = 'arHvz'  # Default options for rsync
+rsync_opt = 'arHvzL'  # Default options for rsync
 rsync_timeout = '5'  # Default rsync timeout
 hosts_ok, hosts_bad, hosts_not_mon, cfg_hosts = [], [], [], []
 
