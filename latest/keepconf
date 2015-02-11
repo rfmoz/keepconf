@@ -497,7 +497,7 @@ if fetch:
 
             try:  # Parse Monitor
                 host_mon = sanitize(parser.get('Main', 'Monitor'))
-                if host_mon.lower() in ('false', '0', 'not', ''):
+                if host_mon.lower() in ('false', '0', 'not'):
                     host_mon = False
                 else:
                     host_mon = True
