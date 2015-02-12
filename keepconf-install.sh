@@ -56,9 +56,9 @@ mkdir ${D_CNF}/pre-commit.d
 mkdir ${D_CNF}/post-commit.d
 
 echo "Copying files..."
-cp ${F_TMP1}/latest/keepconf ${D_BIN}/keepconf
+cp -a ${F_TMP1}/latest/* ${D_CNF}/
+mv ${D_CNF}/keepconf ${D_BIN}/keepconf
 chmod 644 ${D_BIN}/keepconf
-cp ${F_TMP1}/latest/* ${D_CNF}/
 
 cd ${D_CNF} && ls
 
