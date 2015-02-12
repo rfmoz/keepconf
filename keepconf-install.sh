@@ -7,19 +7,19 @@
 
 git --version &> /dev/null
 if [ $? -ne 0 ]; then
-	echo "ERROR: Git command not available"
+	echo "ERROR: \"git\" command not available"
 	echo "Please, install it"; exit 1
 fi
 
 rsync --version &> /dev/null
 if [ $? -ne 0 ]; then
-	echo "ERROR: Rsync command not available"
+	echo "ERROR: \"rsync\" command not available"
 	echo "Please, install it"; exit 1
 fi
 
-file --version &> /dev/null
+file /dev/null &> /dev/null
 if [ $? -ne 0 ]; then
-	echo "ERROR: File command not available"
+	echo "ERROR: \"file\" command not available"
 	echo "Please, install it"; exit 1
 fi
 
@@ -34,8 +34,10 @@ else
 		echo "ERROR: Python version ${pynum} is lower than 2.7"
 		echo "Please, upgrade it."; exit 1
 	else
+                echo '###############################################################################################'
 		echo "Please, ensure that this Python modules are available in the local system:"
 		echo "sys optparse os glob time time string re ConfigParser tempfile subprocess distutils collections"
+                echo '###############################################################################################'
 	fi
 fi
 
@@ -62,7 +64,6 @@ cp ${F_TMP1}/latest/post-get.d/* ${D_CNF}/post-get.d/
 cp ${F_TMP1}/latest/pre-commit.d/* ${D_CNF}/pre-commit.d/
 cp ${F_TMP1}/latest/post-commit.d/* ${D_CNF}/post-commit.d/
 cp ${F_TMP1}/latest/hosts/* ${D_CNF}/hosts/
-cp ${F_TMP1}/latest/hosts/grp/* ${D_CNF}/hosts/grp/
 
 cd ${D_CNF} && ls
 
