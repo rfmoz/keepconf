@@ -18,12 +18,15 @@ For this guide, a ssh connection to localhost is enought, but normally, a ssh co
         cat ~/.ssh/id_dsa.pub >> ~/.ssh/authorized_keys
 
 Test the connection, you need to login without password prompt:
+
         ssh localhost
 
 Initialize the folders and repository:
+
         keepconf -i
 
 Make a simple file for backup some paths of the local host:
+
         cat << END >> /etc/keepconf/hosts/localhost.cfg
         [Main]
         Directory=myhost/
@@ -38,11 +41,14 @@ Make a simple file for backup some paths of the local host:
         END
 
 Finally, launch the command and see the process:
+
         keepconf
 
 Now, inside the destionation folder, there are all the files fetched:
+
         cd /var/keepconf/hosts/myhost/localhost
 
 And a git repo tracking the files:
+
         git log
 
