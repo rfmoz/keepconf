@@ -4,7 +4,7 @@ keepconf
 Keepconf is a agentless tool for backup and track files from remote hosts. It uses rsync and git for the purpose and was inspired in etckeeper.
 
 
-## Basic Installation and usage
+### Basic Installation and usage
 
 Clone the repository or copy the installation script and execute it. Install all the python modules required with pip or with your preferred package manager:
 
