@@ -58,7 +58,11 @@ mkdir ${D_CNF}/post-commit.d
 echo "Copying files..."
 cp -a ${F_TMP1}/latest/* ${D_CNF}/
 mv ${D_CNF}/keepconf ${D_BIN}/keepconf
-chmod 644 ${D_BIN}/keepconf
+chmod 744 ${D_BIN}/keepconf
+rm -f ${D_CNF}/pre-get.d/*.txt
+rm -f ${D_CNF}/post-get.d/*.txt
+rm -f ${D_CNF}/pre-commit.d/*.txt
+rm -f ${D_CNF}/post-commit.d/*.txt
 
 cd ${D_CNF} && ls
 
