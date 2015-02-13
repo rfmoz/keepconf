@@ -28,7 +28,7 @@ except Exception as e:
 
 start_time = time.time()
 
-version = '0.9.31'
+version = '0.9.32'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
@@ -121,7 +121,7 @@ def expand_hostname_range(line=None):
 
 
 def sanitize(text_value):  # Remove especial characters
-    excluded = "[\&,\',\",\;,\,,\|,\<,\>]"
+    excluded = "[\',\",\;,\,,\|,\<,\>]"
     resultd = re.sub(excluded, '', (string.strip(text_value.split('#', 1)[0].split(';', 1)[0].split(',', 1)[0])))
     if resultd:
         return resultd
@@ -530,7 +530,7 @@ if fetch:
                         if lpath.startswith('!'):
                             vprint('Exclude: ', lpath[1:].rstrip())
                             cfg_ex.append(lpath[1:])
-                        elif lpath.startswith('$'):
+                        elif lpath.startswith('&'):
                             vprint('Force: ', lpath[1:].rstrip())
                             cfg_frz.append(lpath[1:])
                         else:

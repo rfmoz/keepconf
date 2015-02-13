@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 0.9.31
+                             version 0.9.32
                                Ricardo F.
-                               2015/02/10
+                               2015/02/13
 
 
 
@@ -341,7 +341,7 @@ host2
 /etc/
 /home/
 !/home/user1/
-$/home/user1/.bashrc
+&/home/user1/.bashrc
 /opt/mysw/conf/
 
 Anything following a sharp ('#') and a semicolon (';') is ignored. A comma
@@ -422,7 +422,7 @@ considering the file valid, the other sections and variables are optional.
       Exclude - A '!' character must be before.
       Force - Based on the behaviour of rsync and how keepconf interact with 
       it, first match rule win, if a include rule match inside a exclude, no 
-      action is taken. Put a '$' character before for force the include.
+      action is taken. Put a '&' character before for force the include.
 
   Examples:
          [Files]
@@ -430,7 +430,7 @@ considering the file valid, the other sections and variables are optional.
          /etc/* # Include folders inside it recursively
          /etc/apache2/sites-enabled/*.conf  # Include all files ended in conf
          !/etc/cron.d/  # Exclude cron.d folder
-         $/etc/cron.d/myfile  # Force include inside a exclude rule match
+         &/etc/cron.d/myfile  # Force include inside a exclude rule match
          /home/user1/conf(1-15)*.conf  # Get a range of files ended in conf
          
 
