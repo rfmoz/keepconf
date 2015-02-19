@@ -416,7 +416,8 @@ considering the file valid, the other sections and variables are optional.
 
 
 [Files]
-  Section for define a lists of paths. One per line.
+  Section for define a lists of paths. One per line. Folder must end with 
+  slash '/' character.
   Its possible to include, exclude or force paths:
       Include - Any character before.
       Exclude - A '!' character must be before.
