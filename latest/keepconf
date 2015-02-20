@@ -28,7 +28,7 @@ except Exception as e:
 
 start_time = time.time()
 
-version = '0.9.32'
+version = '0.9.33'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
@@ -439,10 +439,31 @@ if fetch:
         except Exception as e:
             sys.exit('ERROR reading configuration file: '+ str(e))
 
-        try:   # Get INCLUDES variable
+        try:   # Get Includes_dir variable
+            incl_dir = os.path.normpath(sanitize(parser.get('Main', 'Includes_Dir')))+os.sep
+            vprint('Includes_Dir value:', incl_dir)
+        except Exception as e:
+            incl_dir = False
+            vprint('Includes_Dir value get default:', incl_dir)
+
+        try:   # Get Includes variable
             cfg_includes = parser.get('Main', 'Includes').strip(',$').split(',')
             if cfg_includes[0]:
-                cfg_includes = [d_conf + sanitize(s) for s in cfg_includes]  # Add path to each file
+                for s in cfg_includes[:]:  # Go over includes
+                     cfg_includes.remove(s)  # Remove before process
+                     s = sanitize(s)
+                     if not s.startswith('/'):  # Check if is a a full path
+                         if incl_dir and incl_dir.startswith('/'): 
+                             #  Add full include path
+                             cfg_includes.append(incl_dir + s) 
+                         elif incl_dir and not incl_dir.startswith('/'):
+                             #  Add relative d_conf path plus include path
+                             cfg_includes.append(d_conf + incl_dir + s)  # Add rel
+                         else:
+                             #  Add append d_conf path
+                             cfg_includes.append(d_conf + s)
+                     else:  # If not, add sanitize path
+                          cfg_includes.append(s)
                 cfg_includes.insert(0, sanitize(i))  # Insert own file at the first position
                 cfg_includes = cfg_includes[::-1]  # Reverse order for hieracally process
             else:

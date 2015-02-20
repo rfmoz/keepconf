@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 0.9.32
+                             version 0.9.33
                                Ricardo F.
-                               2015/02/13
+                               2015/02/20
 
 
 
@@ -329,6 +329,7 @@ Each host file located into "D_Conf" directory need to end with a '.cfg'
 extension and can have this format:
 
 [Main]
+Includes_Dir = example_dir/
 Includes = example_dir/example1.cfg, example_dir/example2.cfg
 Directory = / 
 Max_Size = 25M
@@ -355,20 +356,45 @@ considering the file valid, the other sections and variables are optional.
 
 [Main]
   Section for general variables. The following are available inside here:
+  
+  Includes_Dir=
+    Define one directory for include before each "Includes" path. This option
+    is not allowed inside included files.
+    If starts wiht a slash '/' it refers as a full path.
+
+    Examples:
+           Includes_Dir = False  # (Default)
+           Includes_Dir = directory1 
+           Includes_Dir = /directory1  # Full path
+    
 
   Includes=
     Define a list of files for include its content. First in list (left) have
     precedence over others, the main file have precedence over all.
+    This option is not allowed inside included files.
     For included files, this host configuration file format is required, but
-    they have exceptions, "Includes" variables and "[Hosts]" section are not
-    available.
+    they have exceptions, variables "Includes", "Includes_Dir" and "[Hosts]" 
+    section are not available.
     The list must be comma separated.
+    If starts wiht a slash '/' it refers as a full path.
+    If not starts with '/' and "Includes_Dir" exists and not starts with '/'
+    the path will be: D_Conf + Includes_Dir + Includes
+    If not starts with '/' and "Includes_Dir" exists and starts with '/' the
+    path will be: Includes_Dir + Includes
 
     Examples:
            Includes = False  # (Default)
            Includes = grp/linux.cfg
            Includes = grp/production.cfg, grp/linux.cfg
            Includes = grp/webs.cfg, grp/production.cfg, grp/linux.cfg
+
+           Includes_Dir = grp
+           Includes = linux.cfg  # D_Conf + Includes_Dir + Includes
+
+           Includes_Dir = /etc/keepconf/hosts/grp
+           Includes = linux.cfg  # Includes_Dir + Includes
+
+           Includes = /etc/keepconf/hosts/grp/linux.cfg  # Includes
 
   Directory=
     Path for store files fetched inside "D_Dest" directory. Is a usefull
@@ -405,6 +431,7 @@ considering the file valid, the other sections and variables are optional.
 [Hosts]
   Section for define a lists of hosts. One per line. Complete dns hostnames 
   and IP are allowed.
+  This option is not allowed inside included files.
 
   Examples:
          [Hosts]
