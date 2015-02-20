@@ -37,7 +37,8 @@ rsync_timeout = '5'  # Default rsync timeout
 hosts_ok, hosts_bad, hosts_not_mon, cfg_hosts = [], [], [], []
 
 
-def process_folder(str_folder):  # Process external folders
+def process_folder(str_folder):
+    """Process external folders"""
     if not os.path.isdir(str_folder):
         vprint('WARNING '+ str_folder +' not exists')
         return
@@ -57,7 +58,8 @@ def process_folder(str_folder):  # Process external folders
     return
 
 
-def yes_or_not(question):  # Ask user for y/n
+def yes_or_not(question):
+    """Ask user for y/n"""
     sys.stdout.write('%s [y/n]\n' % question)
     while True:
         try:
@@ -67,6 +69,7 @@ def yes_or_not(question):  # Ask user for y/n
 
 
 def detect_range(line=None):
+    """Detect is line have a range"""
     if 0 <= line.find("(") < line.find("-") < line.find(")"):
         return True
     else:
@@ -74,6 +77,7 @@ def detect_range(line=None):
 
 
 def expand_hostname_range(line=None):
+    """Expand hostname range"""
     all_hosts = []
     if line:
         (head, nrange, tail) = line.replace('(', '|', 1).replace(')', '|', 1).split('|')
@@ -120,7 +124,8 @@ def expand_hostname_range(line=None):
         return all_hosts
 
 
-def sanitize(text_value):  # Remove especial characters
+def sanitize(text_value):
+    """Remove especial characters"""
     excluded = "[\',\",\;,\,,\|,\<,\>]"
     resultd = re.sub(excluded, '', (string.strip(text_value.split('#', 1)[0].split(';', 1)[0].split(',', 1)[0])))
     if resultd:
@@ -129,11 +134,13 @@ def sanitize(text_value):  # Remove especial characters
         raise
 
 
-def call_silent(call_, cwd_):
+def call_silent(call_, cwd_='/tmp'):
+    """Redirect stdout and stderr to null"""
     return call(call_, cwd=cwd_, stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'))
 
 
 def extract_walk(cfg_in_):
+    """Extract route from path"""
     paths_lst = []
     # For each line in the files lists
     for g in cfg_in_:
@@ -161,13 +168,13 @@ except:
     sys.exit('ERROR testing python version')
 
 try:
-    if call_silent(('rsync', '--version'), '/tmp/'):
+    if call_silent(('rsync', '--version')):
         vprint('Rsync exists')
 except:
     sys.exit('ERROR rsync not execute correctly in test. Maybe not installed')
 
 try:
-    if call_silent(('git', '--version'), '/tmp/'):
+    if call_silent(('git', '--version')):
         vprint('Git exists')
 except:
     sys.exit('ERROR git not execute correctly in test. Maybe not installed')
