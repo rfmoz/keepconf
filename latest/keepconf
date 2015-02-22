@@ -28,7 +28,7 @@ except Exception as e:
 
 start_time = time.time()
 
-version = '0.9.33'
+version = '0.9.40'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
@@ -430,7 +430,7 @@ if fetch:
         max_size = f_max_size
         host_mon = f_host_mon
         cfg_directory = ''
-        cfg_includes, cfg_hosts, cfg_in, cfg_ex, cfg_frz = [], [], [], [], []
+        roles_lines, cfg_hosts, cfg_in, cfg_ex, cfg_frz = [], [], [], [], []
 
         try:   # Temporary files for include/exclude  to rsync
             _, f_tmp_walk = tempfile.mkstemp()
@@ -446,39 +446,49 @@ if fetch:
         except Exception as e:
             sys.exit('ERROR reading configuration file: '+ str(e))
 
-        try:   # Get Includes_dir variable
-            incl_dir = os.path.normpath(sanitize(parser.get('Main', 'Includes_Dir')))+os.sep
-            vprint('Includes_Dir value:', incl_dir)
-        except Exception as e:
-            incl_dir = False
-            vprint('Includes_Dir value get default:', incl_dir)
 
-        try:   # Get Includes variable
-            cfg_includes = parser.get('Main', 'Includes').strip(',$').split(',')
-            if cfg_includes[0]:
-                for s in cfg_includes[:]:  # Go over includes
-                     cfg_includes.remove(s)  # Remove before process
-                     s = sanitize(s)
-                     if not s.startswith('/'):  # Check if is a a full path
-                         if incl_dir and incl_dir.startswith('/'): 
-                             #  Add full include path
-                             cfg_includes.append(incl_dir + s) 
-                         elif incl_dir and not incl_dir.startswith('/'):
-                             #  Add relative d_conf path plus include path
-                             cfg_includes.append(d_conf + incl_dir + s)  # Add rel
-                         else:
-                             #  Add append d_conf path
-                             cfg_includes.append(d_conf + s)
-                     else:  # If not, add sanitize path
-                          cfg_includes.append(s)
-                cfg_includes.insert(0, sanitize(i))  # Insert own file at the first position
-                cfg_includes = cfg_includes[::-1]  # Reverse order for hieracally process
+        try:  # Parse roles
+            for line, _ in parser.items('Roles'):
+                line = (sanitize(line))
+                if line.startswith('roles_dir'):
+                    vprint('Roles_Dir line exist')
+                else:
+                    vprint('Role: ' + line)
+                    roles_lines.append(line)
+
+            try:   # Get roles_dir variable
+                rol_dir = os.path.normpath(sanitize(parser.get('Roles', 'Roles_Dir')))+os.sep
+                vprint('Roles_Dir value:', rol_dir)
+            except Exception as e:
+                rol_dir = False
+                vprint('Roles_Dir value get default:', rol_dir)
+
+            if roles_lines[0]:
+                for s in roles_lines[:]:  # Go over each role
+                    roles_lines.remove(s)  # Remove before process
+                    s = sanitize(s)
+                    if not s.startswith('/'):  # Check if is a a full path
+                        if rol_dir and rol_dir.startswith('/'): 
+                            #  Add full role path
+                            roles_lines.append(rol_dir + s) 
+                        elif rol_dir and not rol_dir.startswith('/'):
+                            #  Add relative d_conf path plus role path
+                            roles_lines.append(d_conf + rol_dir + s)  # Add rel
+                        else:
+                            #  Add append d_conf path
+                            roles_lines.append(d_conf + s)
+                    else:  # If not, add sanitize path
+                        roles_lines.append(s)
+                roles_lines.insert(0, sanitize(i))  # Insert own file at the first position
+                roles_lines = roles_lines[::-1]  # Reverse order for hieracally process
             else:
-                raise Exception('Empty Includes')
-        except:
-            cfg_includes = []
-            cfg_includes.insert(0, sanitize(i))  # Insert this file at the first position
-        vprint('Includes value:', cfg_includes)
+                raise Exception('Empty Roles')
+        except Exception as e:
+            roles_lines = []
+            roles_lines.insert(0, sanitize(i))  # Insert this file at the first position
+            vprint('WARNING parsing Roles section ' + str(e))
+        vprint('Roles value:', roles_lines)
+
 
         try:  # Reading hosts list
             for line, _ in (parser.items('Hosts')):
@@ -502,7 +512,7 @@ if fetch:
         cfg_hosts = sorted(set(cfg_hosts))  # Remove duplicate names and order
         vprint('Lists of hosts: ', cfg_hosts)
 
-        for j in cfg_includes:  # Process include files
+        for j in roles_lines:  # Process include files
             vprint('- Processing:', j)
             if not os.path.isfile(j):
                 vprint('Invalid file:', j)
