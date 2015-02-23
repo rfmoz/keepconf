@@ -2,7 +2,7 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 0.9.42
+                             version 0.9.43
                                Ricardo F.
                                2015/02/23
 
@@ -420,13 +420,13 @@ considering the file valid, the other sections and variables are optional.
          [Roles]
          Roles_Dir = grp
          host1.cfg
-         production[1-5].cfg
+         production*.cfg
          linux.cfg
 
          [Roles]
          Roles_Dir = /etc/keepconf/hosts/grp
          host1.cfg
-         production[1-5].cfg
+         production?.cfg
          linux.cfg
 
          [Roles]
@@ -502,14 +502,11 @@ rotate the logs:
 | Some Toughts |
 ================
 
-Into '[Files]' section its available the use of asterisk '*', interrogation
-'?' and ranges defined into brackets [1-25] for willcard match.
+Into '[Files]' and '[Roles]' section its available the use of asterisk '*',
+interrogation '?' and ranges defined into brackets [1-25] for willcard match.
 
-Into '[Hosts]' and '[Roles]' its only available the use of ranges defined 
-into brackets [1-25].
-
-A third argument can be passed to the range brackets [1-25-2] for change
-the step.
+Into '[Hosts]' its only available the use of bracket ranges [1-25]. A third 
+argument can be passed to the range brackets [1-25-2] for change the step.
 
 For avoid problems with section definition, range brackets are not allowed 
 at the first position of a line.

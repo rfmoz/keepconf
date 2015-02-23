@@ -28,7 +28,7 @@ except Exception as e:
 
 start_time = time.time()
 
-version = '0.9.42'
+version = '0.9.43'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
@@ -467,25 +467,25 @@ if fetch:
                 for s in roles_lines[:]:  # Go over each role
                     roles_lines.remove(s)  # Remove before process
                     s = sanitize(s)
-                    roles_range = []
-                    if detect_range(s):  # Detect range inside
-                        vprint('Range detected: ', line)
-                        roles_range = expand_range(s)  # Expand hostnames
+                    if not s.startswith('/'):  # Check if is a a full path
+                        if rol_dir and rol_dir.startswith('/'): 
+                            #  Add full role path
+                            roles_lines.append(rol_dir + s) 
+                        elif rol_dir and not rol_dir.startswith('/'):
+                            #  Add relative d_conf path plus role path
+                            roles_lines.append(d_conf + rol_dir + s)  # Add rel
+                        else:
+                            #  Add append d_conf path
+                            roles_lines.append(d_conf + s)
+                    else:  # If not, add sanitize path
+                        roles_lines.append(s)
+                for t in roles_lines[:]:  # Parse path globs
+                    roles_lines.remove(t)
+                    role_glob = glob.glob(t)
+                    if role_glob:  # Test if path exists
+                        roles_lines.extend(role_glob)
                     else:
-                        roles_range.append(s)
-                    for t in roles_range: 
-                        if not t.startswith('/'):  # Check if is a a full path
-                            if rol_dir and rol_dir.startswith('/'): 
-                                #  Add full role path
-                                roles_lines.append(rol_dir + t) 
-                            elif rol_dir and not rol_dir.startswith('/'):
-                                #  Add relative d_conf path plus role path
-                                roles_lines.append(d_conf + rol_dir + t)  # Add rel
-                            else:
-                                #  Add append d_conf path
-                                roles_lines.append(d_conf + t)
-                        else:  # If not, add sanitize path
-                            roles_lines.append(t)
+                        vprint('WARNING with role path:', t)
                 roles_lines.insert(0, sanitize(i))  # Insert own file at the first position
                 roles_lines = roles_lines[::-1]  # Reverse order for hieracally process
             else:
