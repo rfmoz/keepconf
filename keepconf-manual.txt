@@ -2,7 +2,7 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 0.9.41
+                             version 0.9.42
                                Ricardo F.
                                2015/02/23
 
@@ -414,19 +414,19 @@ considering the file valid, the other sections and variables are optional.
   Examples:
          [Roles]
          grp/host1.cfg
-         grp/production(1-5).cfg
+         grp/production[1-5].cfg
          grp/linux.cfg
 
          [Roles]
          Roles_Dir = grp
          host1.cfg
-         production(1-5).cfg
+         production[1-5].cfg
          linux.cfg
 
          [Roles]
          Roles_Dir = /etc/keepconf/hosts/grp
          host1.cfg
-         production(1-5).cfg
+         production[1-5].cfg
          linux.cfg
 
          [Roles]
@@ -442,7 +442,7 @@ considering the file valid, the other sections and variables are optional.
          [Hosts]
          host1.prod
          192.168.5.12
-         web-tier(1-10).prod.company
+         web-tier[1-10].prod.company
          webs.*.company
          web?.prod.company
 
@@ -464,7 +464,7 @@ considering the file valid, the other sections and variables are optional.
          /etc/apache2/sites-enabled/*.conf  # Include all files ended in conf
          !/etc/cron.d/  # Exclude cron.d folder
          &/etc/cron.d/myfile  # Force include inside a exclude rule match
-         /home/user1/conf(1-15)*.conf  # Get a range of files ended in conf
+         /home/user1/conf[1-15]*.conf  # Get a range of files ended in conf
          
 
 ===========
@@ -502,19 +502,17 @@ rotate the logs:
 | Some Toughts |
 ================
 
-Into '[Files]' section its available the use of asterisk '*' and interrogation
-'?' for willcard matching and the use of ranges defined into
-parenthesis (1-25).
+Into '[Files]' section its available the use of asterisk '*', interrogation
+'?' and ranges defined into brackets [1-25] for willcard match.
 
 Into '[Hosts]' and '[Roles]' its only available the use of ranges defined 
-into parenthesis (1-25).
+into brackets [1-25].
 
-A third argument can be passed to the range parenthesis (1-25-2) for change
+A third argument can be passed to the range brackets [1-25-2] for change
 the step.
 
-The use of ranges with parenthesis '(.-.)' is forced in opposite of usual
-brackets '[.-.]' because it can makes some problems with the section
-definition.
+For avoid problems with section definition, range brackets are not allowed 
+at the first position of a line.
 
 By default, paths ended in '/' fetch all content inside it only, if ends with
 '/*' fetch all content inside it recursively.

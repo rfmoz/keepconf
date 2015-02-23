@@ -28,7 +28,7 @@ except Exception as e:
 
 start_time = time.time()
 
-version = '0.9.41'
+version = '0.9.42'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
@@ -70,7 +70,7 @@ def yes_or_not(question):
 
 def detect_range(line=None):
     """Detect is line have a range"""
-    if 0 <= line.find("(") < line.find("-") < line.find(")"):
+    if 0 <= line.find("[") < line.find("-") < line.find("]"):
         return True
     else:
         return False
@@ -80,7 +80,7 @@ def expand_range(line=None):
     """Expand hostname range"""
     all_hosts = []
     if line:
-        (head, nrange, tail) = line.replace('(', '|', 1).replace(')', '|', 1).split('|')
+        (head, nrange, tail) = line.replace('[', '|', 1).replace(']', '|', 1).split('|')
         bounds = nrange.split("-")
         if len(bounds) != 2 and len(bounds) != 3:
             print "host range incorrectly specified"
