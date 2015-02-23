@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 0.9.33
+                             version 0.9.41
                                Ricardo F.
-                               2015/02/20
+                               2015/02/23
 
 
 
@@ -329,12 +329,14 @@ Each host file located into "D_Conf" directory need to end with a '.cfg'
 extension and can have this format:
 
 [Main]
-Includes_Dir = example_dir/
-Includes = example_dir/example1.cfg, example_dir/example2.cfg
 Directory = / 
 Max_Size = 25M
 Rsync_User = root
 Monitor = True
+[Roles]
+Roles_Dir = example_dir
+example1.cfg
+example2.cfg
 [Hosts]
 host1
 host2
@@ -345,57 +347,16 @@ host2
 &/home/user1/.bashrc
 /opt/mysw/conf/
 
-Anything following a sharp ('#') and a semicolon (';') is ignored. A comma
-character (',') splits content only in "Includes" variable, in other cases,
-the following characters are ignored. Space character is allowed, but if is
-possible, avoid its use.
+Anything following a sharp ('#') a semicolon (';') or a comma (',') is
+ignored. Space character is allowed, but if is possible, avoid its use.
 
-The section headers '[Main]', '[Hosts]' or '[Files]' are a must before 
-include their respective variables. Only one hosts must be defined for 
+The section headers '[Main]', '[Roles]', '[Hosts]' or '[Files]' are a must 
+before include their respective variables. Only one hosts must be defined for
 considering the file valid, the other sections and variables are optional.
 
 [Main]
   Section for general variables. The following are available inside here:
   
-  Includes_Dir=
-    Define one directory for include before each "Includes" path. This option
-    is not allowed inside included files.
-    If starts wiht a slash '/' it refers as a full path.
-
-    Examples:
-           Includes_Dir = False  # (Default)
-           Includes_Dir = directory1 
-           Includes_Dir = /directory1  # Full path
-    
-
-  Includes=
-    Define a list of files for include its content. First in list (left) have
-    precedence over others, the main file have precedence over all.
-    This option is not allowed inside included files.
-    For included files, this host configuration file format is required, but
-    they have exceptions, variables "Includes", "Includes_Dir" and "[Hosts]" 
-    section are not available.
-    The list must be comma separated.
-    If starts wiht a slash '/' it refers as a full path.
-    If not starts with '/' and "Includes_Dir" exists and not starts with '/'
-    the path will be: D_Conf + Includes_Dir + Includes
-    If not starts with '/' and "Includes_Dir" exists and starts with '/' the
-    path will be: Includes_Dir + Includes
-
-    Examples:
-           Includes = False  # (Default)
-           Includes = grp/linux.cfg
-           Includes = grp/production.cfg, grp/linux.cfg
-           Includes = grp/webs.cfg, grp/production.cfg, grp/linux.cfg
-
-           Includes_Dir = grp
-           Includes = linux.cfg  # D_Conf + Includes_Dir + Includes
-
-           Includes_Dir = /etc/keepconf/hosts/grp
-           Includes = linux.cfg  # Includes_Dir + Includes
-
-           Includes = /etc/keepconf/hosts/grp/linux.cfg  # Includes
-
   Directory=
     Path for store files fetched inside "D_Dest" directory. Is a usefull
     option for separate different enviorments.
@@ -428,10 +389,54 @@ considering the file valid, the other sections and variables are optional.
            Monitor = True  # (Default)
            Monitor = False
 
+[Roles]
+  Roles_Dir=
+    Define one directory for include before each role path. This option
+    is not allowed inside role files.
+    If starts wiht a slash '/' it refers as a full path.
+
+    Examples:
+           Roles_Dir = False  # (Default)
+           Roles_Dir = directory1
+           Roles_Dir = /directory1  # Full path
+
+
+  Define a list of role files for include its content. Upper in list have
+  precedence over others, the main file have precedence over all.
+  For role files, this host configuration file format is required, but
+  they have exceptions, "[Roles]" and "[Hosts]" section are not available.
+  If starts wiht a slash '/' it refers as a full path.
+  If not starts with '/' and "Roles_Dir" exists and not starts with '/'
+  the path will be: D_Conf + Roles_Dir + file
+  If not starts with '/' and "Roles_Dir" exists and starts with '/' the
+  path will be: Roles_Dir + file
+
+  Examples:
+         [Roles]
+         grp/host1.cfg
+         grp/production(1-5).cfg
+         grp/linux.cfg
+
+         [Roles]
+         Roles_Dir = grp
+         host1.cfg
+         production(1-5).cfg
+         linux.cfg
+
+         [Roles]
+         Roles_Dir = /etc/keepconf/hosts/grp
+         host1.cfg
+         production(1-5).cfg
+         linux.cfg
+
+         [Roles]
+         /etc/keepconf/hosts/grp/linux.cfg
+
+
 [Hosts]
   Section for define a lists of hosts. One per line. Complete dns hostnames 
   and IP are allowed.
-  This option is not allowed inside included files.
+  This option is not allowed inside role files.
 
   Examples:
          [Hosts]
@@ -497,9 +502,12 @@ rotate the logs:
 | Some Toughts |
 ================
 
-Into '[Hosts]' and '[Files]' sections its available the use of asterisk '*'
-and interrogation '?' for willcard matching and the use of ranges defined into
+Into '[Files]' section its available the use of asterisk '*' and interrogation
+'?' for willcard matching and the use of ranges defined into
 parenthesis (1-25).
+
+Into '[Hosts]' and '[Roles]' its only available the use of ranges defined 
+into parenthesis (1-25).
 
 A third argument can be passed to the range parenthesis (1-25-2) for change
 the step.

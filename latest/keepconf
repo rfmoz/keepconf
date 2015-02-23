@@ -28,7 +28,7 @@ except Exception as e:
 
 start_time = time.time()
 
-version = '0.9.40'
+version = '0.9.41'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
@@ -76,7 +76,7 @@ def detect_range(line=None):
         return False
 
 
-def expand_hostname_range(line=None):
+def expand_range(line=None):
     """Expand hostname range"""
     all_hosts = []
     if line:
@@ -118,7 +118,7 @@ def expand_hostname_range(line=None):
         for rseq in seq:
             hname = ''.join((head, fill(rseq), tail))
             if detect_range(hname):
-                all_hosts.extend(expand_hostname_range(hname))
+                all_hosts.extend(expand_range(hname))
             else:
                 all_hosts.append(hname)
         return all_hosts
@@ -467,18 +467,25 @@ if fetch:
                 for s in roles_lines[:]:  # Go over each role
                     roles_lines.remove(s)  # Remove before process
                     s = sanitize(s)
-                    if not s.startswith('/'):  # Check if is a a full path
-                        if rol_dir and rol_dir.startswith('/'): 
-                            #  Add full role path
-                            roles_lines.append(rol_dir + s) 
-                        elif rol_dir and not rol_dir.startswith('/'):
-                            #  Add relative d_conf path plus role path
-                            roles_lines.append(d_conf + rol_dir + s)  # Add rel
-                        else:
-                            #  Add append d_conf path
-                            roles_lines.append(d_conf + s)
-                    else:  # If not, add sanitize path
-                        roles_lines.append(s)
+                    roles_range = []
+                    if detect_range(s):  # Detect range inside
+                        vprint('Range detected: ', line)
+                        roles_range = expand_range(s)  # Expand hostnames
+                    else:
+                        roles_range.append(s)
+                    for t in roles_range: 
+                        if not t.startswith('/'):  # Check if is a a full path
+                            if rol_dir and rol_dir.startswith('/'): 
+                                #  Add full role path
+                                roles_lines.append(rol_dir + t) 
+                            elif rol_dir and not rol_dir.startswith('/'):
+                                #  Add relative d_conf path plus role path
+                                roles_lines.append(d_conf + rol_dir + t)  # Add rel
+                            else:
+                                #  Add append d_conf path
+                                roles_lines.append(d_conf + t)
+                        else:  # If not, add sanitize path
+                            roles_lines.append(t)
                 roles_lines.insert(0, sanitize(i))  # Insert own file at the first position
                 roles_lines = roles_lines[::-1]  # Reverse order for hieracally process
             else:
@@ -506,7 +513,7 @@ if fetch:
         for re_hosts in cfg_hosts:  # Parse expand option if match
             if detect_range(re_hosts):
                 vprint('Range detected: ', re_hosts)
-                cfg_hosts = cfg_hosts + expand_hostname_range(re_hosts)  # Expand hostnames
+                cfg_hosts = cfg_hosts + expand_range(re_hosts)  # Expand hostnames
                 cfg_hosts.remove(re_hosts)  # Remove range from list
 
         cfg_hosts = sorted(set(cfg_hosts))  # Remove duplicate names and order
@@ -561,7 +568,7 @@ if fetch:
                     line = (sanitize(line))
                     if detect_range(line):  # Detect range inside
                         vprint('Range detected: ', line)
-                        line_range = expand_hostname_range(line)  # Expand hostnames
+                        line_range = expand_range(line)  # Expand hostnames
                     else:
                         line_range.append(line)
                     for lpath in line_range:  # Detect each type of line
