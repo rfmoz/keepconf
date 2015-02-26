@@ -159,6 +159,12 @@ def extract_walk(cfg_in_):
     return list(OrderedDict.fromkeys(paths_lst))
 
 
+def test_repo_dir():
+    """Test the state of destination repo dir"""
+    if not os.path.isdir(d_dest+'.git') and options.commit:
+        sys.exit('ERROR: '+str(d_dest)+' not have a repository\nPlease, try to initialize it with \"keepconf -i\"')
+
+
 # Some basic test for avoid annoying errors
 try:
     pyversion = sys.version.split(' ')[0][:3]
@@ -398,10 +404,10 @@ if options.gitinit:  # Parse initialize option
             sys.exit('ERROR local repository not initializated: '+ str(e))
     elif repo_name:
         try:
-            if os.path.isdir(d_dest):
-                print 'WARNING: Destination directory exists!'
-                print 'Please, delete '+d_dest+' before initialize the repo into it'
-                if not yes_or_not('Do you delete it yet, continue?'):
+            if os.listdir(d_dest) != [] and os.path.isdir(d_dest):
+                print 'WARNING: Destination directory exists and is not empty!'
+                print 'Please, fix '+d_dest
+                if not yes_or_not('Do you already did it, continue?'):
                     vprint('Avoid clonning repository into destination folder: '+d_dest)
                     sys.exit(0)
             print 'Clonning repository...'
@@ -416,7 +422,9 @@ if options.gitinit:  # Parse initialize option
 
 if fetch:
     fetch_time = time.time()
+    test_repo_dir()
     print '- Fetching start'
+
     if d_pre_get:
         process_folder(d_pre_get)  # Execute post-get.d
 
@@ -664,9 +672,8 @@ else:
 
 if commit and repo_name:
     commit_time = time.time()
+    test_repo_dir()
     print '- Committing start'
-    if not os.path.isdir(d_dest+'.git'):
-        sys.exit('ERROR: '+str(d_dest)+' not have a repository\nPlease, try to initialize it with \"keepconf -i\"')
 
     if d_pre_commit:
         process_folder(d_pre_commit)  # Execute pre-commit.d
