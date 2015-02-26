@@ -28,7 +28,7 @@ except Exception as e:
 
 start_time = time.time()
 
-version = '0.9.43'
+version = '0.9.44'
 f_conf = '/etc/keepconf/keepconf.cfg'  # Default configuration file
 f_max_size = '25M'  # Default max size rsync value
 f_rsync_user = "root"  # Default rsync user
@@ -271,9 +271,9 @@ except Exception as e:
 try:  # Getting D_Dest variable
     d_dest = os.path.normpath(sanitize(parser.get('Main', 'D_Dest')))+os.sep
     vprint('D_Dest value:', d_dest)
-    if not options.gitinit:
+    if not options.gitinit and options.commit:
         if not os.path.isdir(d_dest):
-            sys.exit('ERROR '+ str(d_dest) +' is not a valid D_Dest directory\nMaybe you need to create it before and initialize with \"keepconf -i\"')
+            sys.exit('ERROR '+ str(d_dest) +' is not initialized.\nPlease, try to execute \"keepconf -i\"')
 except Exception as e:
     sys.exit('ERROR D_Dest variable not defined: '+ str(e))
 
@@ -399,9 +399,9 @@ if options.gitinit:  # Parse initialize option
     elif repo_name:
         try:
             if os.path.isdir(d_dest):
-                print 'WARNING: Destination directory exists and is not empty!'
+                print 'WARNING: Destination directory exists!'
                 print 'Please, delete '+d_dest+' before initialize the repo into it'
-                if not yes_or_not('Do you want to continue?'):
+                if not yes_or_not('Do you delete it yet, continue?'):
                     vprint('Avoid clonning repository into destination folder: '+d_dest)
                     sys.exit(0)
             print 'Clonning repository...'
@@ -666,7 +666,7 @@ if commit and repo_name:
     commit_time = time.time()
     print '- Committing start'
     if not os.path.isdir(d_dest+'.git'):
-        sys.exit('ERROR: '+str(d_dest)+' not have a repository\nMaybe you need to initialize it with \"keepconf -i\"')
+        sys.exit('ERROR: '+str(d_dest)+' not have a repository\nPlease, try to initialize it with \"keepconf -i\"')
 
     if d_pre_commit:
         process_folder(d_pre_commit)  # Execute pre-commit.d

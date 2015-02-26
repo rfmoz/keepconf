@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 0.9.43
+                             version 0.9.44
                                Ricardo F.
-                               2015/02/23
+                               2015/02/26
 
 
 
@@ -170,17 +170,18 @@ if is possible, avoid it.
   Section for general variables. The following are available inside here:
 
   D_Conf=
-     Directory with the hosts configuration files. It is a requirement for
-     the basic behaviour of keepconf. See "Hosts configuration file format" 
-     section for more information about the files stored into it.
+    Directory with the hosts configuration files. It is a requirement for
+    the basic behaviour of keepconf. See "Hosts configuration file format" 
+    section for more information about the files stored into it.
 
-     Example:
-           D_Conf = /etc/keepconf/hosts/
+    Example:
+          D_Conf = /etc/keepconf/hosts/
 
   D_Dest=
     Directory for store remote files and locate the repository. It is a
     requirement for the basic behaviour of keepconf. Rsync put there all 
-    files fetched. A valid and empty dir is needed.
+    files fetched. A valid and empty dir is needed. If not exist, the
+    initialize option creates it.
  
     Example:
            D_Dest = /var/keepconf/hosts/
