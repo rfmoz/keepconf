@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 0.9.44
+                             version 0.9.54
                                Ricardo F.
-                               2015/02/26
+                              09/March/2015
 
 
 
@@ -12,16 +12,16 @@
 | Abstract |
 ============
 
-Keepconf is a agentless tool for backup files from remote hosts. It uses
-rsync for fetching and git for tracking the changes. Indeed, it can:
+Keepconf is a agentless tool for backup and track files from remote hosts. It
+uses rsync and git for the purpouse. Indeed, it can:
   - process lists of files/folders for retrieve it from hosts
   - limit size of the files fetched
   - allow different users for each host
-  - manage groups for clearly administrate the infraestructure
+  - manage groups of properties
   - store content in different defined directories
   - trigger hooks for execute whatever after/before fetching/committing
   - use a local or remote git repository
-  - report the final status for monitoring the results
+  - report the final status for monitoring the results in csv format
 
 
 =================
@@ -31,18 +31,16 @@ rsync for fetching and git for tracking the changes. Indeed, it can:
 Almost these version of the following software:
 
    python 2.7 with this modules:
-      sys, optparse, os, glob, time, time, 
-      string, re, ConfigParser, tempfile, 
-      subprocess, distutils, collections
+      sys, optparse, os, glob, time, string, re, ConfigParser, 
+      tempfile, subprocess, distutils, collections
    rsync 3.0
    git 1.7
-   file 5.0
 
 A ssh-keys connection to the target hosts. Password promt is not supported.
 
 A configuration file, recomended in "/etc/keepconf/keepconf.cfg"
 
-Some free space for store remote files.
+Some free space for store the remote files.
 
 
 ============================
@@ -82,8 +80,8 @@ There are only a few command line options :
 
   
 -i, --init
-  Initialize repository, wich will be located at "D_Dest" variable defined in 
-  the configuration file. Depends if "Repo" variable is defined with local or 
+  Initialize repository, wich will be located at "d_dest" variable defined in 
+  the configuration file. Depends if "repo" variable is defined with local or 
   remote repository, a fresh init or a clone will be done. If is not defined 
   or is "False", any action will be done. 
 
@@ -93,9 +91,8 @@ There are only a few command line options :
 
 
 -n, --nocommit
-  Avoid committing changes, executing "Pre_Commit" and "Post_Commit" scripts.
-  Only fetching files and executing "Pre_Get" and "Post_Get" will be done. It
-  is a good option for testing hosts and if git tracking will not be used.
+  Avoid committing changes, executing "pre_commit" and "post_commit" scripts.
+  Only fetching files and executing "pre_get" and "post_get" will be done.
 
   Examples:
          keepconf -n
@@ -103,9 +100,8 @@ There are only a few command line options :
 
 
 -c, --commitonly
-  Avoid fetching files, executing "Pre_Get" and "Post_Get". Only commit
-  operation and execution of "Pre_Commit" and "Post_Commit" will be done. It is
-  a good option if you are fixing the repo and want to test if all is ok.
+  Avoid fetching files, executing "pre_get" and "post_get". Only commit
+  operation and execution of "pre_commit" and "post_commit" will be done.
 
   Examples:
          keepconf -c
@@ -113,7 +109,7 @@ There are only a few command line options :
 
 
 -m, --message
-  Substitute the default commit message with the text defined after this 
+  Substitute the default commit message with the text defined inside this
   option.
 
   Examples:
@@ -122,17 +118,17 @@ There are only a few command line options :
 
 
 -s, --silent
-  When rsync fetchs files, some information about the state of the files and
-  the operations that it do are printed trought the terminal. For silent rsync
-  stdout and stderr use this option.
+  When rsync fetchs files, some information about their running state are 
+  printed trought the terminal. For silent the rsync stdout and stderr 
+  use this option.
 
   Examples:
          keepconf -s
          keepconf --silent
 
 -x, --xilent
-  When git is execute, some information about the changes is printed trought 
-  the terminal. For silent git stdout and stderr use this option.
+  When git is execute, some information about their behaviour are printed 
+  trought the terminal. For silent git stdout and stderr use this option.
 
   Examples:
          keepconf -x
@@ -140,9 +136,8 @@ There are only a few command line options :
 
 
 -v, --verbose
-  Print a lot of information about the internals of keepconf. For debugging how
-  it gets the variables from files and the backgroud behaviour, this is the
-  option.
+  Print a lot of information about the internals of keepconf. Good for 
+  debugging how it gets the variables from files and the backgroud behaviour.
 
   Examples:
          keepconf -v
@@ -165,160 +160,168 @@ There are only a few command line options :
 Inside the configuration file, anything following a sharp ('#'), semicolon 
 (';') or comma character (',') is ignored. Space caracter is allowed, but
 if is possible, avoid it.
+All names of sections and variables must be only in lowercase.
 
-[Main]
+[main]
   Section for general variables. The following are available inside here:
 
-  D_Conf=
-    Directory with the hosts configuration files. It is a requirement for
+  d_conf=
+    Directory for the hosts configuration files. It is a requirement for
     the basic behaviour of keepconf. See "Hosts configuration file format" 
-    section for more information about the files stored into it.
+    section for more information about the files stored there.
 
     Example:
-          D_Conf = /etc/keepconf/hosts/
+          d_conf = /etc/keepconf/hosts/
 
-  D_Dest=
-    Directory for store remote files and locate the repository. It is a
+  d_dest=
+    Directory for store the remote files and locate the repository. It is a
     requirement for the basic behaviour of keepconf. Rsync put there all 
-    files fetched. A valid and empty dir is needed. If not exist, the
-    initialize option creates it.
+    files fetched inside a folder with the name of each host. A valid and 
+    empty dir is needed. If not exist, the initialize option creates it 
+    automatically.
  
     Example:
-           D_Dest = /var/keepconf/hosts/
+           d_dest = /var/keepconf/hosts/
 
-  Monitor_File=
+  f_monitor=
     File for store the reports of execution. It is in csv format.
    
     Examples:
-           Monitor_File = /var/keepconf/keepconf-mon.csv
-           Monitor_File = False  # (Default)
+           f_monitor = /var/keepconf/keepconf-mon.csv
+           f_monitor = False  # (Default)
 
-  Monitor_Hosts=
+  mon_hosts=
     Default behaviour for tracking hosts. 
 
     Examples:
-           Monitor_Hosts = True  # (Default)
-           Monitor_Hosts = False
+           mon_hosts = True  # (Default)
+           mon_hosts = False
 
-[Sync]
+[sync]
   Section for fetching variables. The following are available inside here:
 
-  Fetch=
+  fetch=
     Enable or disable fetching behaviour.
 
     Examples:
-           Fetch = True  # (Default)
-           Fetch = False
+           fetch = True  # (Default)
+           fetch = False
 
-  Pre_Get=
-    Directory for store files executed before fetching files from remote hosts.
+  pre_get=
+    Directory for store the files that will be executed before fetching the 
+    files from the remote hosts.
     See "External scripts" section for more information.
 
     Examples:
-           Pre_Get = /etc/keepconf/pre-get.d/
-           Pre_Get = False  # (Default)
+           pre_get = /etc/keepconf/pre-get.d/
+           pre_get = False  # (Default)
 
-  Post_Get=
-    Directory for store files executed after fetching files from remote hosts.
+  post_get=
+    Directory for store the files that will be executed after fetching the 
+    files from remote hosts.
     See "External scripts" section for more information.
 
     Examples:
-           Post_Get = /etc/keepconf/post-get.d/
-           Post_Get = False  # (Default)
+           post_get = /etc/keepconf/post-get.d/
+           post_get = False  # (Default)
 
-  Max_Size=
+  max_size=
     Global size limit for files to fetch. It must be a number followed by the
     initial of the size name. 
 
     Examples:
-           Max_Size = 25M  # (Default)
-           Max_Size = 100K
-           Max_Size = 1024B
+           max_size = 25M  # (Default)
+           max_size = 100K
+           max_size = 1024B
 
-  Rsync_User=
+  rsync_user=
     Global default user for connect to remote hosts via rsync.
 
     Examples:
-           Rsync_User = root  # (Default)
-           Rsync_User = backup
+           rsync_user = backup  # (Default)
+           rsync_user = root
 
-  Rsync_Opt=
+  rsync_opt=
     Common options for pass to rsync command. They must be a compact list
     like the example. By default:
       archive, recursive, preserve hard links, verbose, compress, copy links
     
     Examples:
-           Rsync_Opt = arHvzL  # (Default)
-           Rsync_Opt = ar
-           Rsync_Opt = v
+           rsync_opt = arHvzL  # (Default)
+           rsync_opt = ar
+           rsync_opt = v
 
-[VCS]
+[vcs]
   Section for version control system variables. The following are available 
   inside here:
 
-  Commit=
+  commit=
     Enable or disable commit behaviour.
 
     Examples:
-           Commit = True  # (Default)
-           Commit = False
+           commit = True  # (Default)
+           commit = False
 
-  Pre_Commit=
-    Directory for store files executed before committing files in "D_Dest"
-    directory. See "External scripts" section for more information.
-
-    Examples:
-           Pre_Commit = /etc/keepconf/pre-commit.d/
-           Pre_Commit = False  # (Default)
-    
-  Post_Commit=
-    Directory for store files executed after committing files in "D_Dest"
-    directory. See "External scripts" section for more information.
+  pre_commit=
+    Directory for store the files that will be executed before committing 
+    files located inside "d_dest" directory. See "External scripts" section 
+    for more information.
 
     Examples:
-           Post_Commit = /etc/keepconf/pre-commit.d/
-           Post_Commit = False  # (Default)
+           pre_commit = /etc/keepconf/pre-commit.d/
+           pre_commit = False  # (Default)
     
-  Repo=
-    Type of repository:
-      "False" disable commit behaviour
-      "local" local repository located inside "D_Dest" directory
-      "ssh://user@host/rute/to/repo" remote repository cloned into "D_Dest"
+  post_commit=
+    Directory for store the files that will be executed after committing 
+    files located inside "d_dest" directory. See "External scripts" section 
+    for more information.
+
+    Examples:
+           post_commit = /etc/keepconf/pre-commit.d/
+           post_commit = False  # (Default)
+    
+  repo=
+    Type of git repository:
+      "False" disable commit behaviour.
+      "local" local repository located inside "d_dest" directory.
+      "ssh://user@host/rute/to/repo" remote repository cloned into "d_dest".
  
     Examples:
-           Repo = False
-           Repo = "local"
-           Repo = "ssh://user@host/rute/to/repo"
+           repo = False
+           repo = "local"
+           repo = "ssh://user@host/rute/to/repo"
 
 
 ====================
 | External Scripts |
 ====================
 
-Variables "Pre_Get", "Post_Get", "Pre_Commit" and "Post_Commit" defines a
+Variables "pre_get", "post_get", "pre_commit" and "post_commit" defines a
 folder wich all files into it with execution permissions are executed. But
 executed in diferent stages of the flow:
 
 pre-fetch -> fetch files -> post-fetch -> pre-commit -> commit -> post-commit
 
-Two arguments are passed to each file when its executed, first is "D_Conf" and
-second is "D_Dest". The main use is for put some configuration inside a
-particular folder into "D_Conf" and store the files fetched into "D_Dest".
+Two arguments are passed to each file when its executed, first is "d_conf" and
+second is "d_dest".
+
+The definition of the directory must be a complete route starting from the 
+root path.
 
 Are a good point for include diferent particular tasks. For example:
 
-- Locate a script inside "Pre_Get" or "Post_Get" for backup a swich, firewall,
+- Locate a script inside "pre_get" or "post_get" for backup a swich, firewall,
 appliance, whatever  device... wich need a particular process. Put the files 
-fetched inside a folder into "D_Dest" directory and it will be tracked with 
+fetched inside a folder into "d_dest" directory and it will be tracked with 
 git as all other content.
 
 - Execute keepconf with no commit option '-n' and put a script inside
-"Post_Get" for call an other version control system, like subversion.
+"post_get" for call an other version control system, like subversion.
 
-- Put a script with an information report inside "Post_Commit" directory for
-get some type of information after each execution.
+- Put a script inside "post_commit" directory for do some task after each 
+execution.
 
-- Delete especial and binary files for avoid commit them. Actually the script
+- Delete especial and binary files for avoid commit them. Actually this script
 it is included into "post-commit.d" directory at the github repo.
 
 
@@ -326,22 +329,22 @@ it is included into "post-commit.d" directory at the github repo.
 | Hosts configuration file format |
 ===================================
 
-Each host file located into "D_Conf" directory need to end with a '.cfg'
-extension and can have this format:
+Each host file located into "d_conf" directory need to end with a '.cfg'
+extension and can have this format and variables:
 
-[Main]
-Directory = / 
-Max_Size = 25M
-Rsync_User = root
-Monitor = True
-[Roles]
-Roles_Dir = example_dir
+[main]
+directory = / 
+max_size = 25M
+rsync_user = root
+monitor = True
+[roles]
+roles_dir = example_dir/
 example1.cfg
 example2.cfg
-[Hosts]
+[hosts]
 host1
 host2
-[Files]
+[files]
 /etc/
 /home/
 !/home/user1/
@@ -349,117 +352,128 @@ host2
 /opt/mysw/conf/
 
 Anything following a sharp ('#') a semicolon (';') or a comma (',') is
-ignored. Space character is allowed, but if is possible, avoid its use.
+ignored. Space character is allowed, but if is possible, avoid it use.
 
-The section headers '[Main]', '[Roles]', '[Hosts]' or '[Files]' are a must 
-before include their respective variables. Only one hosts must be defined for
-considering the file valid, the other sections and variables are optional.
+The section headers are a must before include their respective variables. 
+Only one hosts must be defined for considering the file valid, the other 
+sections and variables are optional.
 
-[Main]
+[main]
   Section for general variables. The following are available inside here:
   
-  Directory=
-    Path for store files fetched inside "D_Dest" directory. Is a usefull
+  directory=
+    Path for store the files fetched inside "d_dest" directory. Is a usefull
     option for separate different enviorments.
 
     Examples:
-           Directory = / # (Default)
-           Directory = web-servers/
-           Directory = web-servers/prod/
+           directory = / # (Default)
+           directory = web-servers/
+           directory = web-servers/prod/
 
-  Max_Size=
-    Particular size limit for files to fetch. It must be a number followed by
-    the initial of the size name. 
+  max_size=
+    Particular size limit for the files to fetch. It must be a number followed
+    by the initial of the size name. 
 
     Examples:
-           Max_Size = 25M  # (Default)
-           Max_Size = 100K
-           Max_Size = 1024B
+           max_size = 25M  # (Default)
+           max_size = 100K
+           max_size = 1024B
 
-  Rsync_User=
+  rsync_user=
     Particular user for connect to remote hosts via rsync.
 
     Examples:
-           Rsync_User = root  # (Default)
-           Rsync_User = backup
+           rsync_user = backup  # (Default)
+           rsync_user = root 
 
-  Monitor=
+  monitor=
     Particular behaviour for tracking hosts in the final report.
 
     Examples:
-           Monitor = True  # (Default)
-           Monitor = False
+           monitor = True  # (Default)
+           monitor = False
 
-[Roles]
-  Roles_Dir=
-    Define one directory for include before each role path. This option
-    is not allowed inside role files.
-    If starts wiht a slash '/' it refers as a full path.
+[roles]
+  Section for define a list of files for include their content as a group
+  of properties. One per line.
+  This section is not allowed inside a role file.
+
+  roles_dir=
+    Define one directory for include before each role path.
+    If starts wiht a slash '/' it refers as a full path, if not, d_conf
+    path is append before it.
 
     Examples:
-           Roles_Dir = False  # (Default)
-           Roles_Dir = directory1
-           Roles_Dir = /directory1  # Full path
+           roles_dir = False  # (Default)
+           roles_dir = directory1  # 'd_conf' + roles_dir
+           roles_dir = /directory1  # Full path
 
 
-  Define a list of role files for include its content. Upper in list have
-  precedence over others, the main file have precedence over all.
+  Except the 'roles_dir' variable, the lines defined here will be treated as
+  a roles file for process. Upper in list have precedence over others, the 
+  main file located in 'd_conf' which have the roles references have 
+  precedence over all. 
   For role files, this host configuration file format is required, but
   they have exceptions, "[Roles]" and "[Hosts]" section are not available.
   If starts wiht a slash '/' it refers as a full path.
-  If not starts with '/' and "Roles_Dir" exists and not starts with '/'
-  the path will be: D_Conf + Roles_Dir + file
-  If not starts with '/' and "Roles_Dir" exists and starts with '/' the
-  path will be: Roles_Dir + file
+  If not starts with '/' and "roles_dir" exists and not starts with '/'
+  the path will be: d_conf + roles_dir + file
+  If not starts with '/' and "roles_dir" exists and starts with '/' the
+  path will be: roles_dir + file
+  Its available the use of asterisk '*', interrogation '?' and ranges defined
+  into brackets [1-25] for willcard match.
 
   Examples:
-         [Roles]
+         [roles]
          grp/host1.cfg
          grp/production[1-5].cfg
          grp/linux.cfg
 
-         [Roles]
-         Roles_Dir = grp
+         [roles]
+         roles_dir = grp
          host1.cfg
          production*.cfg
          linux.cfg
 
-         [Roles]
-         Roles_Dir = /etc/keepconf/hosts/grp
+         [roles]
+         roles_dir = /etc/keepconf/hosts/grp
          host1.cfg
          production?.cfg
          linux.cfg
 
-         [Roles]
+         [roles]
          /etc/keepconf/hosts/grp/linux.cfg
 
 
-[Hosts]
-  Section for define a lists of hosts. One per line. Complete dns hostnames 
-  and IP are allowed.
-  This option is not allowed inside role files.
+[hosts]
+  Section for define the lists of hosts that will be fetched. One per line.
+  Complete dns hostnames and IP are allowed.
+  This option is not allowed inside a role files.
+  For willcard match its only available the use of ranges defined into
+  brackets [1-25]. A third argument can be passed to the range brackets 
+  [1-25-2] for change the step.
 
   Examples:
-         [Hosts]
+         [hosts]
          host1.prod
          192.168.5.12
          web-tier[1-10].prod.company
-         webs.*.company
-         web?.prod.company
 
 
-[Files]
-  Section for define a lists of paths. One per line. Folder must end with 
-  slash '/' character.
+[files]
+  Section for define the lists of files and paths that will be fetched.
+  One per line. Folder must ends with slash '/' character.
+  Its available the use of asterisk '*', interrogation '?' and ranges defined
+  into brackets [1-25] for willcard match.
   Its possible to include, exclude or force paths:
-      Include - Any character before.
-      Exclude - A '!' character must be before.
+      Include - Normal line path.
+      Exclude - A '!' character must be before the path.
       Force - Based on the behaviour of rsync and how keepconf interact with 
-      it, first match rule win, if a include rule match inside a exclude, no 
-      action is taken. Put a '&' character before for force the include.
+      it, exclude rules have precedence over includes. For force the include 
+      of a path inside a exclude match, add a '&' character before the path.
 
   Examples:
-         [Files]
+         [files]
          /etc/  # Include all /etc/ but not folders inside it
          /etc/* # Include folders inside it recursively
          /etc/apache2/sites-enabled/*.conf  # Include all files ended in conf
@@ -485,11 +499,12 @@ execution time:
 | Schedule execution |
 ======================
 
-For have a automate backup with a log, add this line to the cron daemon:
+For have a automate backup with a log, this line can be added to the cron 
+daemon:
 15 06 * * * keepconf &> /var/log/keepconf.log
 
-And a file called "keepconf" to /etc/logrotate.d with this content for
-rotate the logs:
+And for rotate the log generated, add a file called "keepconf" to 
+/etc/logrotate.d with this content:
 
 /var/log/keepconf.log {
   rotate 12
@@ -503,20 +518,14 @@ rotate the logs:
 | Some Toughts |
 ================
 
-Into '[Files]' and '[Roles]' section its available the use of asterisk '*',
-interrogation '?' and ranges defined into brackets [1-25] for willcard match.
-
-Into '[Hosts]' its only available the use of bracket ranges [1-25]. A third 
-argument can be passed to the range brackets [1-25-2] for change the step.
-
 For avoid problems with section definition, range brackets are not allowed 
 at the first position of a line.
 
 By default, paths ended in '/' fetch all content inside it only, if ends with
 '/*' fetch all content inside it recursively.
 
-A munin pluging is written for graph the reports of keepconf, look for it into
-the keepconf github account for get it.
+A munin pluging is written for graph the csv reports of keepconf, look for it
+into the keepconf github account.
 
-If you found any bugs, please report it with all informations as you can
-(usually with a verbose output). Thanks.
+If you found any bugs, please report it with all information as you can
+(a verbose output its helpfull). Thanks.

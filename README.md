@@ -28,11 +28,11 @@ Initialize the folders and repository:
 Make a simple file for backup some paths of the local host:
 
         cat << END >> /etc/keepconf/hosts/localhost.cfg
-        [Main]
-        Directory=myhost/
-        [Hosts]
+        [main]
+        directory=myhost/
+        [hosts]
         localhost
-        [Files]
+        [files]
         /etc/
         !/etc/passwd
         !/etc/group
@@ -52,3 +52,7 @@ And a git repo tracking the files:
 
         git log
 
+
+### More information
+
+Please, read keepconf-manual.txt for a complete reference manual.

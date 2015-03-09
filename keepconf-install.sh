@@ -2,7 +2,7 @@
 
 #
 # Keepconf installation script
-# v.1.0
+# v.1.1
 #
 
 git --version &> /dev/null
@@ -14,12 +14,6 @@ fi
 rsync --version &> /dev/null
 if [ $? -ne 0 ]; then
 	echo "ERROR: \"rsync\" command not available"
-	echo "Please, install it"; exit 1
-fi
-
-file /dev/null &> /dev/null
-if [ $? -ne 0 ]; then
-	echo "ERROR: \"file\" command not available"
 	echo "Please, install it"; exit 1
 fi
 

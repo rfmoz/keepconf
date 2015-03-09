@@ -1,1 +1,2 @@
-Directory for store scripts that will be executing before commiting files.
+Directory for store the scripts that will be executing before commiting files.
+Scripts must be with executable flag.

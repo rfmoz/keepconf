@@ -17,14 +17,14 @@ env.file /var/keepconf/keepconf-mon.csv
 
 =head1 AUTHOR
 
-Ricardo Fraile <rfrail3@yahoo.es>
+Ricardo F. <rfrail3@yahoo.es>
 
 =head1 LICENSE
 
 GPLv2
 
 =head1 VERSION
-v.1.0.0
+v.1.1.0
 
 =head1 MAGICK MARKERS
 
@@ -65,9 +65,9 @@ if [ "$1" = "config" ]; then
 	exit 0
 fi
 
-FET=`cat $file  | grep 'FETCH-TIME' | awk -F, '{print $2}' | tr -d '"'`
-COM=`cat $file  | grep 'COMMIT-TIME' | awk -F, '{print $2}' | tr -d '"'`
-TOT=`cat $file  | grep 'TOTAL-TIME' | awk -F, '{print $2}' | tr -d '"'`
+FET=`cat $file  | grep ^\"FETCH-T\" | awk -F, '{print $2}' | tr -d '"'`
+COM=`cat $file  | grep ^\"COMMIT-T\" | awk -F, '{print $2}' | tr -d '"'`
+TOT=`cat $file  | grep ^\"TOTAL-T\" | awk -F, '{print $2}' | tr -d '"'`
 
 echo "fetch.value `echo ${FET}`"
 echo "commit.value `echo ${COM}`"
