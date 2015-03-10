@@ -450,6 +450,7 @@ def main():
                             p['roles_lines'].extend(role_glob)
                         p['roles_lines'].insert(0, sanitize(i))  # Insert own file at the first position
                         p['roles_lines'] = p['roles_lines'][::-1]  # Reverse order for hieracally process
+                        print '- Roles:', ', '.join(p['roles_lines'])
                     else:
                         raise Exception('WARNING in roles section')
                 except Exception as e:
