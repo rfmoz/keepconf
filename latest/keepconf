@@ -26,7 +26,7 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-version = '0.9.54'
+version = '0.9.55'
 
 def process_folder(str_folder, conf, dest):
     """Process external folders"""
@@ -287,9 +287,6 @@ def main():
             c['f_monitor'] = os.path.normpath(sanitize(parser.get('main','f_monitor')))
             if c['f_monitor'].lower() in ('false', '0', 'not'):
                 raise
-            else:  # Clean monitor file
-                with open(c['f_monitor'], "w"):
-                    pass
             vprint('f_monitor value:', c['f_monitor'])
         except:
             c['f_monitor'] = False
@@ -683,8 +680,11 @@ def main():
             print('- Completed in: %.2f seconds' % total_time)
         
         if c['f_monitor']:
+
             vprint('Writing stats to monitor file ', c['f_monitor'])
             try:
+                with open(c['f_monitor'], "w"):  # Clean monitor file
+                    pass
                 if hosts_bad:
                     hosts_bad_list = ","+ ','.join(['\"'+ x +'\"' for x in hosts_bad])
                 else:
