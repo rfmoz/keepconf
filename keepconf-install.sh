@@ -42,7 +42,7 @@ echo "Clonning repository..."
 git clone https://github.com/rfrail3/keepconf.git ${F_TMP1}
 
 echo "Creating paths..."
-mkdir -p ${D_CNF}/hosts/grp
+mkdir -p ${D_CNF}/hosts/roles
 mkdir ${D_CNF}/pre-get.d
 mkdir ${D_CNF}/post-get.d
 mkdir ${D_CNF}/pre-commit.d
