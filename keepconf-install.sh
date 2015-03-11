@@ -22,16 +22,15 @@ if [ $? -ne 0 ]; then
 	echo "ERROR: Python not available"
 	echo "Please, install it"; exit 1
 else
-	pynum=`echo ${pyver} | cut -d' ' -f 2 | cut -c-3`
-	pyresult=`echo "$pynum > 2.6" | bc -l`
-	if [ $pyresult -eq 0 ] ; then
-		echo "ERROR: Python version ${pynum} is lower than 2.7"
+	pynum=`echo ${pyver} | tr -d '.''' | grep -Eo  '[0-9]*' | cut -c 1-2`
+	if [ $pynum -ne 27 ] ; then
+		echo "ERROR: Its needed Python version 2.7, not ${pyver}"
 		echo "Please, upgrade it."; exit 1
 	else
-                echo '###############################################################################################'
+                echo '##########################################################################################'
 		echo "Please, ensure that this Python modules are available in the local system:"
-		echo "sys optparse os glob time time string re ConfigParser tempfile subprocess distutils collections"
-                echo '###############################################################################################'
+		echo "sys optparse os glob time string re ConfigParser tempfile subprocess distutils collections"
+                echo '##########################################################################################'
 	fi
 fi
 
@@ -61,5 +60,5 @@ rm -f ${D_CNF}/post-commit.d/*.txt
 cd ${D_CNF} && ls
 
 echo "Instalation Complete, configure as your needs"
-echo "Don't forget a entry line in cron for schedule the process"
+echo "Don't forget an entry line in cron for schedule the process"
 echo "Enjoy!"
