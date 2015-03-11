@@ -17,6 +17,12 @@ if [ $? -ne 0 ]; then
 	echo "Please, install it"; exit 1
 fi
 
+file /dev/null &> /dev/null  # For 01-remove-binary script
+if [ $? -ne 0 ]; then
+	echo "ERROR: \"file\" command not available"
+	echo "Please, install it"; exit 1
+fi
+
 pyver=`python --version 2>&1 /dev/null`
 if [ $? -ne 0 ]; then
 	echo "ERROR: Python not available"
