@@ -26,7 +26,7 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-version = '0.9.55'
+version = '0.9.56'
 
 def process_folder(str_folder, conf, dest):
     """Process external folders"""
@@ -357,12 +357,16 @@ def main():
                     sys.exit('ERROR local repository not initializated: '+ str(e))
             elif c['repo']:
                 try:
-                    if os.listdir(c['d_dest']) != [] and os.path.isdir(c['d_dest']):
-                        print 'WARNING: Destination directory exists and is not empty!'
-                        print 'Please, fix '+c['d_dest']
-                        if not yes_or_not('Do you already did it, continue?'):
-                            vprint('Avoid clonning repository into destination folder: '+c['d_dest'])
-                            sys.exit(0)
+                    if os.path.isdir(c['d_dest']):
+                        if os.listdir(c['d_dest']) != []:
+                            print 'WARNING: Destination directory exists and is not empty!'
+                            print 'Please, fix '+c['d_dest']
+                            if not yes_or_not('Do you already did it, continue?'):
+                                vprint('Avoid clonning repository into destination folder: '+c['d_dest'])
+                                sys.exit(0)
+                    else: 
+                        vprint('Creating directory', c['d_dest'])
+                        os.makedirs(c['d_dest'])
                     print 'Clonning repository...'
                     sys.stdout.flush()
                     call(('git', 'clone', c['repo'], c['d_dest']))
