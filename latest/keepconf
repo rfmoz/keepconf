@@ -334,7 +334,7 @@ def main():
                 vprint(val + ' value:', c[val])
                 if val == 'd_dest':
                     if (not options.gitinit and c['commit']) and not os.path.isdir(c['d_dest']):
-                        sys.exit('ERROR d_conf'+ str(c[val]) +' is not initialized.\nPlease, try to execute \"keepconf -i\"')
+                        sys.exit('ERROR d_conf: '+ str(c[val]) +' is not initialized.\nPlease, try to execute \"keepconf -i\"')
                 if val == 'd_conf':
                     if not os.path.isdir(c['d_conf']):
                         sys.exit('ERROR: '+ str(c['d_conf']) +' is not a valid d_conf directory')
