@@ -378,15 +378,31 @@ def main():
             sys.exit(0)
         
         if c['fetch']:
+            # 1.-  Executing pre-get.d
+            # 2.-  Parse cfg files
+            # 3.-  Get roles list
+            # 4.-  Get hosts list
+            # 5.-  Process roles files included
+            # 6.-  Get directory variable
+            # 7.-  Get monitor variable
+            # 8.-  Get rsync_user and max_size variables
+            # 9.-  Get files variable
+            # 10.- Write to include/exclude rsync file
+            # 11.- Create destination directories
+            # 12.- Fetching content
+            # 13.- Executing post-get.d
+        
             fetch_time = time.time()
             test_repo_dir(c['d_dest'], c['commit'])
             print '- Fetching start'
-        
+
+            # 1.-  Executing pre-get.d
             if c['pre_get']:
-                process_folder(c['pre_get'], c['d_conf'], c['d_dest'])  # Execute post-get.d
+                process_folder(c['pre_get'], c['d_conf'], c['d_dest'])
         
             srvfiles = glob.glob(c['d_conf']+'*.cfg')  # Get files in conf dir folder
         
+            # 2.-  Parse cfg files
             for i in srvfiles:  # Process each file
                 print '- Processing:', i
         
@@ -415,6 +431,7 @@ def main():
                 except Exception as e:
                     sys.exit('ERROR reading host config file: '+ str(e))
 
+                # 3.-  Get roles list
                 try:  # Parse roles
                     for line, _ in parser.items('roles'):
                         line = (sanitize(line))
@@ -460,12 +477,13 @@ def main():
                     vprint('WARNING parsing roles section ' + str(e))
                 vprint('roles value:', p['roles_lines'])
         
+                # 4.-  Get hosts list
                 try:  # Reading hosts list
                     for line, _ in (parser.items('hosts')):
                         p['list'].append(sanitize(line))
                         vprint('Reading hosts:', line)
 
-                    if p['list'][0]:  # Empty host list skip the file
+                    if p['list'][0]:  # If empty host list skip the file
                         vprint('Hosts value:', p['list'])
                     else:
                         raise Exception('Empty Hosts')
@@ -483,7 +501,8 @@ def main():
                 p['list'] = sorted(set(p['list']))  # Remove duplicate names and order
                 vprint('Lists of hosts: ', p['list'])
         
-                for j in p['roles_lines']:  # Process include files
+                # 5.-  Process roles files included
+                for j in p['roles_lines']: 
                     vprint('- Processing:', j)
                     if not os.path.isfile(j):
                         vprint('Invalid file:', j)
@@ -495,6 +514,7 @@ def main():
                     except Exception as e:
                         sys.exit('ERROR reading cfg file: '+j+' '+ str(e))
         
+                    # 6.-  Get directory variable
                     try:  # Parse directory
                         p['directory'] = os.path.normpath(sanitize(parser.get('main', 'directory')))+os.sep
                         vprint('directory:', p['directory'],)
@@ -504,6 +524,7 @@ def main():
                         else:
                             vprint('directory heritage: ' + p['directory'])
         
+                    # 7.-  Get monitor variable
                     try:  # Parse monitor
                         p['monitor'] = sanitize(parser.get('main', 'monitor'))
                         if p['monitor'].lower() in ('false', '0', 'not'):
@@ -514,6 +535,7 @@ def main():
                     except:
                         vprint('monitor herietage: ', p['monitor'],)
         
+                    # 8.-  Get rsync_user and max_size variables
                     for val in ('rsync_user','max_size'):  # Parse rsync_user and max_size
                         try:
                             p[val] = sanitize(parser.get('main', val))
@@ -521,6 +543,7 @@ def main():
                         except:
                             vprint(val +' herietage: ', p[val],)
         
+                    # 9.-  Get files variable
                     try:  # Parse includes/excludes
                         if parser.items('files') != []:
                             for line, _ in parser.items('files'):
@@ -546,13 +569,13 @@ def main():
                     except Exception as e:
                         vprint('WARNING parsing files section in: ' + j + ' ' + str(e))
         
+                # 10.- Write to include/exclude rsync file
                 for val in ('cfg_in', 'cfg_ex', 'cfg_frz'):
                     try:
                         p[val]=sorted(set(p[val]))  # Clean duplicates and order
                     except Exception as e:
                         vprint('WARNING sorting: ' + val + ' ' + str(e))
         
-                # Write files to the rsync file
                 if p['cfg_frz']:
                     paths_lst_frz = extract_walk(p['cfg_frz'])
                     vprint('Force paths: '+str(p['cfg_frz'])+'->'+str(paths_lst_frz))
@@ -574,6 +597,7 @@ def main():
                 f_walk.write('- *\n')  # This line must be in the file allways
                 f_walk.seek(0)
                 
+                # 11.- Create destination directories
                 for srvname in p['list']:  # Creating directory for each host
                     try:
                         final_path = c['d_dest'] + p['directory'] + srvname
@@ -586,6 +610,7 @@ def main():
                         except Exception as e:
                             sys.exit('ERROR creating destination server directory: '+final_path+' - '+str(e))
         
+                    # 12.- Fetching content
                     print '- Fetching:', srvname
                     # Syncing files
                     # For modify rsync call, the place is the following line:
@@ -612,6 +637,7 @@ def main():
                 else:
                     os.remove(f_tmp_walk)
         
+            # 13.- Executing post-get.d
             if c['post_get']:
                 process_folder(c['post_get'], c['d_conf'], c['d_dest'])  # Execute post-get.d
         
