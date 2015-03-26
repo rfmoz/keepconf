@@ -769,6 +769,10 @@ def main():
                     hosts_not_mon_list = ''
                 with open(c['f_monitor'], "a") as file_monitor:
                     try:
+                        file_monitor.write('\"CFG-FILE\",\"' + os.path.basename(options.conffile)+'\"\n')
+                    except:
+                        file_monitor.write('\"BadCfgFileName\"\n')
+                    try:
                         file_monitor.write('\"OK\",\"' + str(len(hosts_ok)) + '\"' + hosts_ok_list + '\n')
                     except:
                         file_monitor.write('\"OK\",\"0\"\n')
