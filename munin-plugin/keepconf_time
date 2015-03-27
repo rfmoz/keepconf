@@ -61,15 +61,15 @@ if [ "$1" = "config" ]; then
 
                 NAME=`cat ${i}  | grep ^\"CFG-FILE\" | awk -F, '{print $2}' | tr -d '"'`
 
-                echo "fetch${HNAME}.label Ok ${NAME}"
+                echo "fetch${HNAME}.label Fetch ${NAME}"
                 echo "fetch${HNAME}.type GAUGE"
                 echo "fetch${HNAME}.min 0"
 
-                echo "commit${HNAME}.label Bad ${NAME}"
+                echo "commit${HNAME}.label Commit ${NAME}"
                 echo "commit${HNAME}.type GAUGE"
                 echo "commit${HNAME}.min 0"
 
-                echo "total${HNAME}.label Not Mon. ${NAME}"
+                echo "total${HNAME}.label Total ${NAME}"
                 echo "total${HNAME}.type GAUGE"
                 echo "total${HNAME}.min 0"
         done
