@@ -13,7 +13,10 @@ Linux box with keepconf installed.
 =head1 CONFIGURATION
 
 [keepconf_*]
-env.file /var/keepconf/keepconf-mon.csv
+env.files /var/keepconf/keepconf-mon.csv
+# Multifile its available
+#env.files /var/keepconf/keepconf-client1.csv /var/keepconf/keepconf-client2.csv
+
 
 =head1 AUTHOR
 
@@ -41,6 +44,8 @@ if [ "$1" = "autoconf" ]; then
 	exit 0
 fi
 
+LIST=$files
+
 if [ "$1" = "config" ]; then
 
 	echo 'graph_title Keepconf times'
@@ -50,25 +55,38 @@ if [ "$1" = "config" ]; then
 	echo 'graph_category keepconf'
 	echo 'graph_info Indicate the times of a keepconf execution.'
 
-        echo "fetch.label Fetch"
-        echo "fetch.type GAUGE"
-        echo "fetch.min 0"
+        for i in ${LIST}; do
 
-        echo "commit.label Commit"
-        echo "commit.type GAUGE"
-        echo "commit.min 0"
+                HNAME=`echo ${i} | md5sum | cut -d - -f1 | sed 's/ //g'`
 
-        echo "total.label Total"
-        echo "total.type GAUGE"
-        echo "total.min 0"
+                NAME=`cat ${i}  | grep ^\"CFG-FILE\" | awk -F, '{print $2}' | tr -d '"'`
+
+                echo "fetch${HNAME}.label Ok ${NAME}"
+                echo "fetch${HNAME}.type GAUGE"
+                echo "fetch${HNAME}.min 0"
+
+                echo "commit${HNAME}.label Bad ${NAME}"
+                echo "commit${HNAME}.type GAUGE"
+                echo "commit${HNAME}.min 0"
+
+                echo "total${HNAME}.label Not Mon. ${NAME}"
+                echo "total${HNAME}.type GAUGE"
+                echo "total${HNAME}.min 0"
+        done
 
 	exit 0
 fi
 
-FET=`cat $file  | grep ^\"FETCH-T\" | awk -F, '{print $2}' | tr -d '"'`
-COM=`cat $file  | grep ^\"COMMIT-T\" | awk -F, '{print $2}' | tr -d '"'`
-TOT=`cat $file  | grep ^\"TOTAL-T\" | awk -F, '{print $2}' | tr -d '"'`
 
-echo "fetch.value `echo ${FET}`"
-echo "commit.value `echo ${COM}`"
-echo "total.value `echo ${TOT}`"
+for i in ${LIST}; do
+	FET=`cat ${i}  | grep ^\"FETCH-T\" | awk -F, '{print $2}' | tr -d '"'`
+	COM=`cat ${i}  | grep ^\"COMMIT-T\" | awk -F, '{print $2}' | tr -d '"'`
+	TOT=`cat ${i}  | grep ^\"TOTAL-T\" | awk -F, '{print $2}' | tr -d '"'`
+
+        HNAME=`echo ${i} | md5sum | cut -d - -f1 | sed 's/ //g'`
+
+	echo "fetch${HNAME}.value `echo ${FET}`"
+	echo "commit${HNAME}.value `echo ${COM}`"
+	echo "total${HNAME}.value `echo ${TOT}`"
+
+done

@@ -13,7 +13,9 @@ Linux box with keepconf installed.
 =head1 CONFIGURATION
 
 [keepconf_*]
-env.file /var/keepconf/keepconf-mon.csv
+env.files /var/keepconf/keepconf-mon.csv
+# Multifile its available
+#env.files /var/keepconf/keepconf-client1.csv /var/keepconf/keepconf-client2.csv
 
 =head1 AUTHOR
 
@@ -41,6 +43,8 @@ if [ "$1" = "autoconf" ]; then
 	exit 0
 fi
 
+LIST=$files
+
 if [ "$1" = "config" ]; then
 
 	echo 'graph_title Keepconf report'
@@ -50,25 +54,36 @@ if [ "$1" = "config" ]; then
 	echo 'graph_category keepconf'
 	echo 'graph_info Indicate the status of a keepconf execution.'
 
-        echo "ok.label Ok"
-        echo "ok.type GAUGE"
-        echo "ok.min 0"
+	for i in ${LIST}; do
+ 
+                HNAME=`echo ${i} | md5sum | cut -d - -f1 | sed 's/ //g'`
 
-        echo "bad.label Bad"
-        echo "bad.type GAUGE"
-        echo "bad.min 0"
+		NAME=`cat ${i}  | grep ^\"CFG-FILE\" | awk -F, '{print $2}' | tr -d '"'`
 
-        echo "not.label Not Mon."
-        echo "not.type GAUGE"
-        echo "not.min 0"
+        	echo "ok${HNAME}.label Ok ${NAME}"
+	        echo "ok${HNAME}.type GAUGE"
+        	echo "ok${HNAME}.min 0"
+
+	        echo "bad${HNAME}.label Bad ${NAME}"
+        	echo "bad${HNAME}.type GAUGE"
+	        echo "bad${HNAME}.min 0"
+
+        	echo "not${HNAME}.label Not Mon. ${NAME}"
+	        echo "not${HNAME}.type GAUGE"
+        	echo "not${HNAME}.min 0"
+	done
 
 	exit 0
 fi
 
-OK=`cat $file  | grep ^\"OK\" | awk -F, '{print $2}' | tr -d '"'`
-BAD=`cat $file  | grep ^\"BAD\" | awk -F, '{print $2}' | tr -d '"'`
-NOT=`cat $file  | grep ^\"NOT\" | awk -F, '{print $2}' | tr -d '"'`
+for i in ${LIST}; do
+	OK=`cat ${i}  | grep ^\"OK\" | awk -F, '{print $2}' | tr -d '"'`
+	BAD=`cat ${i}  | grep ^\"BAD\" | awk -F, '{print $2}' | tr -d '"'`
+	NOT=`cat ${i}  | grep ^\"NOT\" | awk -F, '{print $2}' | tr -d '"'`
 
-echo "ok.value `echo ${OK}`"
-echo "bad.value `echo ${BAD}`"
-echo "not.value `echo ${NOT}`"
+        HNAME=`echo ${i} | md5sum | cut -d - -f1 | sed 's/ //g'`
+
+	echo "ok${HNAME}.value `echo ${OK}`"
+	echo "bad${HNAME}.value `echo ${BAD}`"
+	echo "not${HNAME}.value `echo ${NOT}`"
+done
