@@ -26,7 +26,7 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-version = '0.9.58'
+version = '0.9.59'
 
 def process_folder(str_folder, conf, dest):
     """Execute files located inside external folders"""
@@ -359,7 +359,8 @@ def main():
                 vprint(val + ' value:', c[val])
                 if val == 'd_dest':
                     if (not options.gitinit and c['commit']) and not os.path.isdir(c['d_dest']):
-                        sys.exit('ERROR d_conf: '+ str(c[val]) +' is not initialized.\nPlease, try to execute \"keepconf -i\"')
+                        sys.exit('ERROR d_conf: '+ str(c[val]) +
+                        ' is not initialized.\nPlease, try to execute \"keepconf -i\"')
                 if val == 'd_conf':
                     if not os.path.isdir(c['d_conf']):
                         sys.exit('ERROR: '+ str(c['d_conf']) +' is not a valid d_conf directory')
@@ -371,7 +372,7 @@ def main():
 
             if c['repo'] == 'local':  # local repo
                 try:
-                    if os.path.isdir(c['d_dest']+'.git'):
+                    if os.path.isdir(os.path.join(c['d_dest'],'.git')):
                         print 'WARNING: A .git folder exists inside '+ c['d_dest'] +' directory!'
                         if not yes_or_not('Do you want to initialize an exiting repository?'):
                             vprint('Avoid initializating folder with .git directory')
@@ -433,7 +434,7 @@ def main():
             if c['pre_get']:
                 process_folder(c['pre_get'], c['d_conf'], c['d_dest'])
         
-            srvfiles = glob.glob(c['d_conf']+'*.cfg')  # get files in d_conf dir folder
+            srvfiles = glob.glob(os.path.join(c['d_conf'],'*.cfg'))  # get files in d_conf dir folder
         
             # + Parse cfg files
             for i in srvfiles:
@@ -484,18 +485,10 @@ def main():
                         for s in p['roles_lines'][:]:  # go over each role
                             p['roles_lines'].remove(s)  # remove before process
                             s = sanitize(s)
-                            if not s.startswith('/'):  # check if is a a full path
-                                if p['roles_dir'] and p['roles_dir'].startswith('/'): 
-                                    #  add full role path
-                                    p['roles_lines'].append(p['roles_dir'] + s) 
-                                elif p['roles_dir'] and not p['roles_dir'].startswith('/'):
-                                    #  add relative d_conf path plus role path
-                                    p['roles_lines'].append(c['d_conf'] + p['roles_dir'] + s)
-                                else:
-                                    #  add append d_conf path
-                                    p['roles_lines'].append(c['d_conf'] + s)
-                            else:  # add sanitize path
-                                p['roles_lines'].append(s)
+                            if p['roles_dir']:  # check if roles dir exist for include to the path
+                                p['roles_lines'].append(os.path.join(c['d_conf'], p['roles_dir'], s))
+                            else:
+                                p['roles_lines'].append(os.path.join(c['d_conf'], s))
 
                         for t in p['roles_lines'][:]:  # parse path globs
                             p['roles_lines'].remove(t)
@@ -633,9 +626,10 @@ def main():
                 # + Create destination directories
                 for srvname in p['list']:  
                     try:
-                        final_path = c['d_dest'] + p['directory'] + srvname
+                        final_path = os.path.join(c['d_dest'], p['directory'], srvname)
                     except:
-                        final_path = c['d_dest'] + srvname
+                        final_path = os.path.join(c['d_dest'], srvname)
+
                     if not os.path.isdir(final_path):  # if local folder not exists, do it
                         try:
                             vprint('Making directory', final_path)
@@ -646,7 +640,10 @@ def main():
                     # + Fetching content
                     print '- Fetching:', srvname
                     # syncing files, for modify rsync call, the place is the following line:
-                    rsync_call = ('rsync', '-'+c['rsync_opt'], '--progress', '--delete-excluded', '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+p['max_size'], '--include-from=' + f_walk.name, '--prune-empty-dirs', p['rsync_user']+'@'+srvname+':/', final_path)
+                    rsync_call = ('rsync', '-'+c['rsync_opt'], '--progress', '--delete-excluded',
+                    '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+p['max_size'], 
+                    '--include-from=' + f_walk.name, '--prune-empty-dirs', 
+                    p['rsync_user']+'@'+srvname+':/', final_path)
                     vprint(' '.join(map(str,rsync_call)))
                     try:
                         sys.stdout.flush()
