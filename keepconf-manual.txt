@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 0.9.58
+                             version 0.9.59
                                Ricardo F.
-                              09/March/2015
+                              30/March/2015
 
 
 
@@ -168,7 +168,8 @@ All names of sections and variables must be only in lowercase.
   d_conf=
     Directory for the hosts configuration files. It is a requirement for
     the basic behaviour of keepconf. See "Hosts configuration file format" 
-    section for more information about the files stored there.
+    section for more information about the files stored there. Require a 
+    full path definition.
 
     Example:
           d_conf = /etc/keepconf/hosts/
@@ -178,7 +179,7 @@ All names of sections and variables must be only in lowercase.
     requirement for the basic behaviour of keepconf. Rsync put there all 
     files fetched inside a folder with the name of each host. A valid and 
     empty dir is needed. If not exist, the initialize option creates it 
-    automatically.
+    automatically. Require a full path definition.
  
     Example:
            d_dest = /var/keepconf/hosts/
@@ -324,6 +325,8 @@ execution.
 - Delete especial and binary files for avoid commit them. Actually this script
 it is included into "post-commit.d" directory at the github repo.
 
+Full path definition is required for this variables.
+
 
 ===================================
 | Hosts configuration file format |
@@ -364,6 +367,9 @@ sections and variables are optional.
   directory=
     Path for store the files fetched inside "d_dest" directory. Is a usefull
     option for separate different enviorments.
+    If starts wiht a slash '/' it refers as a full path.
+    If not starts with '/', the path will be: d_dest + directory + host name
+    If directory is not set, the path will be: d_dest + host name
 
     Examples:
            directory = / # (Default)
