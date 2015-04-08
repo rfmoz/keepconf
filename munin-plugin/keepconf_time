@@ -13,9 +13,9 @@ Linux box with keepconf installed.
 =head1 CONFIGURATION
 
 [keepconf_*]
-env.files /var/keepconf/keepconf-mon.csv
+env.files /var/tmp/keepconf-mon.csv
 # Multifile its available
-#env.files /var/keepconf/keepconf-client1.csv /var/keepconf/keepconf-client2.csv
+#env.files /var/tmp/keepconf-client1.csv /var/tmp/keepconf-client2.csv
 
 
 =head1 AUTHOR

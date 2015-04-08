@@ -21,6 +21,7 @@ Test the connection, you need to login without password prompt:
         ssh localhost
 
 For this test, rsync user will be root, add the following line under the commented sync_user:
+
         # sync_user = backup
         rsync_user = root
 
@@ -28,20 +29,9 @@ Initialize the folders and repository:
 
         keepconf -i
 
-Make a simple file for backup some paths of the local host:
+Make a simple file for backup some paths of the local host, take care of the tabs and spaces before each line, dont add any of both:
 
-        cat << END >> /etc/keepconf/hosts/localhost.cfg
-        [main]
-        directory=myhost/
-        [hosts]
-        localhost
-        [files]
-        /etc/
-        !/etc/passwd
-        !/etc/group
-        !/etc/shadow
-        /proc/sys/kernel/*
-        END
+	printf "%s\n" '[main]' 'directory=myhost/' '[hosts]' 'localhost' '[files]' '/etc/' '!/etc/passwd' '!/etc/group' '!/etc/shadow' '/proc/sys/kernel/*' '/etc/keepconf/hosts/localhost.cfg' > /etc/keepconf/hosts/localhost.cfg
 
 Finally, launch the command and see the process:
 

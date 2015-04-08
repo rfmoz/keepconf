@@ -4,7 +4,7 @@
                          ----------------------
                              version 0.9.59
                                Ricardo F.
-                              30/March/2015
+                              08/April/2015
 
 
 
@@ -161,6 +161,8 @@ Inside the configuration file, anything following a sharp ('#'), semicolon
 (';') or comma character (',') is ignored. Space caracter is allowed, but
 if is possible, avoid it.
 All names of sections and variables must be only in lowercase.
+Take care of the tabs and spaces at the beginning of each line, dont add any 
+of both.
 
 [main]
   Section for general variables. The following are available inside here:
@@ -188,7 +190,7 @@ All names of sections and variables must be only in lowercase.
     File for store the reports of execution. It is in csv format.
    
     Examples:
-           f_monitor = /var/keepconf/keepconf-mon.csv
+           f_monitor = /var/tmp/keepconf-mon.csv
            f_monitor = False  # (Default)
 
   mon_hosts=
@@ -356,6 +358,8 @@ host2
 
 Anything following a sharp ('#') a semicolon (';') or a comma (',') is
 ignored. Space character is allowed, but if is possible, avoid it use.
+Take care of the tabs and spaces at the beginning of each line, dont add any 
+of both.
 
 The section headers are a must before include their respective variables. 
 Only one hosts must be defined for considering the file valid, the other 
