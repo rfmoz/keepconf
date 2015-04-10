@@ -26,7 +26,7 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-version = '0.9.59'
+version = '1.0.00'
 
 def process_folder(str_folder, conf, dest):
     """Execute files located inside external folders"""

@@ -26,7 +26,7 @@ fi
 pyver=`python --version 2>&1 /dev/null`
 if [ $? -ne 0 ]; then
 	echo "ERROR: Python not available"
-	echo "Please, install it"; exit 1
+	echo "Please, install version 2.7"; exit 1
 else
 	pynum=`echo ${pyver} | tr -d '.''' | grep -Eo  '[0-9]*' | cut -c 1-2`
 	if [ $pynum -ne 27 ] ; then
@@ -43,6 +43,9 @@ fi
 F_TMP1=`mktemp -d`
 D_CNF='/etc/keepconf'
 D_BIN='/usr/bin'
+
+echo "Keepconf installation script"
+echo ""
 
 echo "Clonning repository..."
 git clone https://github.com/rfrail3/keepconf.git ${F_TMP1}
