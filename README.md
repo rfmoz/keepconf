@@ -16,7 +16,7 @@ For this guide, a ssh connection to localhost is enought, but normally, a ssh co
         ssh-keygen -t dsa -P '' -f ~/.ssh/id_dsa
         cat ~/.ssh/id_dsa.pub >> ~/.ssh/authorized_keys
 
-Test the connection, you need to login without password prompt:
+Test the connection, you need to login without password prompt (Accept with 'yes' the first attempt):
 
         ssh localhost
 
