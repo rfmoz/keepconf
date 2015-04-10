@@ -31,7 +31,7 @@ Initialize the folders and repository:
 
 Make a simple file for backup some paths of the local host, take care of the tabs and spaces before each line, dont add any of both:
 
-	printf "%s\n" '[main]' 'directory=myhost/' '[hosts]' 'localhost' '[files]' '/etc/' '!/etc/passwd' '!/etc/group' '!/etc/shadow' '/proc/sys/kernel/*' '/etc/keepconf/hosts/localhost.cfg' > /etc/keepconf/hosts/localhost.cfg
+	printf "%s\n" '[main]' 'directory=myhost/' '[hosts]' 'localhost' '[files]' '/etc/' '!/etc/passwd' '!/etc/group' '!/etc/shadow' '/proc/sys/kernel/*' > /etc/keepconf/hosts/localhost.cfg
 
 Finally, launch the command and see the process:
 
