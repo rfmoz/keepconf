@@ -20,7 +20,7 @@ Test the connection, you need to login without password prompt (Accept with 'yes
 
         ssh localhost
 
-For this test, rsync user will be root, add the following line under the commented sync_user:
+For this test, rsync user will be root, add the following line under the commented sync_user in "/etc/keepconf/keepconf.cfg":
 
         # sync_user = backup
         rsync_user = root
