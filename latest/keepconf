@@ -26,7 +26,7 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-version = '1.0.00'
+version = '1.0.01'
 
 def process_folder(str_folder, conf, dest):
     """Execute files located inside external folders"""
@@ -34,7 +34,7 @@ def process_folder(str_folder, conf, dest):
         vprint('WARNING '+ str_folder +' not exists')
         return
     print '- Finding files in ' + str_folder
-    folder_files = glob.glob(str_folder + '*')  # get files in folder
+    folder_files = sorted(glob.glob(str_folder + '*'))  # get files in folder
     for b in folder_files:
         try:
             print '- Processing:', b
@@ -434,7 +434,7 @@ def main():
             if c['pre_get']:
                 process_folder(c['pre_get'], c['d_conf'], c['d_dest'])
         
-            srvfiles = glob.glob(os.path.join(c['d_conf'],'*.cfg'))  # get files in d_conf dir folder
+            srvfiles = sorted(glob.glob(os.path.join(c['d_conf'],'*.cfg')))  # get files in d_conf dir folder
         
             # + Parse cfg files
             for i in srvfiles:
@@ -480,17 +480,17 @@ def main():
                     except Exception as e:
                         vprint('roles_dir get value:', p['roles_dir'])
         
-                    # + Get roles file lines
+                    # + Get roles file lines - Process 
                     if p['roles_lines'][0]:
                         for s in p['roles_lines'][:]:  # go over each role
                             p['roles_lines'].remove(s)  # remove before process
                             s = sanitize(s)
-                            if p['roles_dir']:  # check if roles dir exist for include to the path
+                            if p['roles_dir']:  # check if variable roles dir exist for adding it into the path
                                 p['roles_lines'].append(os.path.join(c['d_conf'], p['roles_dir'], s))
                             else:
                                 p['roles_lines'].append(os.path.join(c['d_conf'], s))
 
-                        for t in p['roles_lines'][:]:  # parse path globs
+                        for t in p['roles_lines'][:]:  # parse paths for checking the name integrity
                             p['roles_lines'].remove(t)
                             role_glob = glob.glob(t)
                             p['roles_lines'].extend(role_glob)

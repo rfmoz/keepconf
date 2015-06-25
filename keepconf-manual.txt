@@ -303,7 +303,7 @@ Variables "pre_get", "post_get", "pre_commit" and "post_commit" defines a
 folder wich all files into it with execution permissions are executed. But
 executed in diferent stages of the flow:
 
-pre-fetch -> fetch files -> post-fetch -> pre-commit -> commit -> post-commit
+pre-get -> fetch files -> post-get -> pre-commit -> commit -> post-commit
 
 Two arguments are passed to each file when its executed, first is "d_conf" and
 second is "d_dest".
