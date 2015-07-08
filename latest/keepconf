@@ -26,10 +26,10 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-version = '1.0.01'
+version = '1.0.02'
 
 def process_folder(str_folder, conf, dest):
-    """Execute files located inside external folders"""
+    """Execute all files located in a external folder"""
     if not os.path.isdir(str_folder):
         vprint('WARNING '+ str_folder +' not exists')
         return
@@ -38,7 +38,7 @@ def process_folder(str_folder, conf, dest):
     for b in folder_files:
         try:
             print '- Processing:', b
-            if not (os.path.isfile(b) and os.access(b, os.X_OK)):  # rest if is executable each file
+            if not (os.path.isfile(b) and os.access(b, os.X_OK)):  # only execute executable files
                 print 'WARNING nothing done in non executable file ' + b
             else:
                 try:
@@ -134,7 +134,7 @@ def sanitize(text_value):
 
 
 def call_out(call_, silent_=None, cwd_='/tmp'):
-    """Execute external program and redirect stdout and stderr to null if needed"""
+    """Execute external program and redirect stdout and stderr to null if is needed"""
     try:
         if silent_:
             return call(call_, cwd=cwd_, stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'))
@@ -145,28 +145,28 @@ def call_out(call_, silent_=None, cwd_='/tmp'):
 
 
 def extract_walk(cfg_in_, walking=True):
-    """Extract route from path"""
+    """Deconstruct path, extract elements"""
     paths_lst = []
-    for g in cfg_in_:  # for each line inthe files list
+    for g in cfg_in_:  # for each line in the list of files/paths
         walk_lst = []
         if walking:
             head, _ = os.path.split(g)
             walk_path = ''
-            for t in head.split('/'):  # expand the walk for each directory
+            for t in head.split('/'):  # extract, deconstruct, route path
                 walk_path += t + '/'
                 walk_lst.append(walk_path)
-        # For a more comprensive behaviour than rsync do alone, add an asterisk
-        # to paths that ends in a slash or slash and asterisk
+        # For a comprensive behaviour than rsync do alone, add an asterisk
+        # to the paths that ends in a slash or slash and asterisk
         if g.endswith('/') or g.endswith('/*'):
             vprint('Adding * to: ' + str(g))
             g += '*'
-        walk_lst.append(g)
-        paths_lst += walk_lst
+        walk_lst.append(g)  # add origin path after its deconstructed route
+        paths_lst += walk_lst  # add processed path to the total amount
     return list(OrderedDict.fromkeys(paths_lst))
 
 
 def test_repo_dir(d_dest_, commit_):
-    """Test the state of a destination repo dir"""
+    """Test the state of the destination repo dir"""
     if not os.path.isdir(d_dest_+'.git') and commit_:
         sys.exit('ERROR: '+str(d_dest_)+' not have a repository\nPlease, try to initialize it with \"keepconf -i\"')
 
@@ -192,13 +192,13 @@ except:
 
 def main():
         # Inside this function:
-        # - Read command line options 
-        # - Parse verbose option 
-        # - Parse version option 
+        # - Read command line options
+        # - Parse verbose option
+        # - Parse version option
         # - Get and parse configuration file
         # - Get f_monitor
         # - Get fetch and commit
-        # - Get mon_hosts, repo, max_size, rsync_user and rsync_opt
+        # - Get repo, max_size, rsync_user and rsync_opt
         # - Get pre_get, post_get, pre_commit, post_commit
         # - Get d_dest and d_conf
         # - Parse init option
@@ -210,13 +210,12 @@ def main():
         start_time = time.time()
 
         f_conf = '/etc/keepconf/keepconf.cfg'  # default configuration file
-        hosts_ok, hosts_bad, hosts_not_mon = [], [], []
+        hosts_ok, hosts_bad = [], []
 
         c = {
         'd_conf': False,
         'd_dest': False,
         'f_monitor': None,
-        'mon_hosts': None,
         'fetch': None,
         'pre_get': False,
         'post_get': False,
@@ -229,7 +228,7 @@ def main():
         'post_commit': False,
         'repo': 'local'}
 
-        # - Read command line options 
+        # - Read command line options
         parser = optparse.OptionParser()
         parser.add_option('-f', '--conf',
                           dest='conffile',
@@ -279,30 +278,30 @@ def main():
                           action='store_true',
                           help='show version')
         options, _ = parser.parse_args()
-        
-        # - Parse verbose option 
+
+        # - Parse verbose option
         global enable_verbose
         if options.verbose:
             enable_verbose = True
         else:
             enable_verbose = False
-        
-        # - Parse version option 
+
+        # - Parse version option
         if options.version:
             print 'keepconf version', version
             sys.exit(0)
-        
+
         # - Get and parse configuration file
         vprint('Reading configuration file:', options.conffile)
-        try: 
-            if not (os.path.isfile(options.conffile)): 
+        try:
+            if not (os.path.isfile(options.conffile)):
                 raise Exception
             else:
                 parser = ConfigParser()
                 parser.read(options.conffile)
         except Exception as e:
             sys.exit('ERROR reading configuration file: '+ str(options.conffile) +' '+  str(e))
-        
+
         # - Get f_monitor
         try:
             c['f_monitor'] = os.path.normpath(sanitize(parser.get('main','f_monitor')))
@@ -312,7 +311,7 @@ def main():
         except:
             c['f_monitor'] = False
             vprint('f_monitor get value:', c['f_monitor'])
-        
+
         # - Get fetch and commit
         for optn, sec, val in ((options.commitonly,'sync','fetch'), (options.commit,'vcs','commit')):
             try:  # commit variable must be processed before d_dest
@@ -329,21 +328,16 @@ def main():
                 c[val] = optn
                 vprint(val +' get value:', c[val])
 
-        # - Get mon_hosts, repo, max_size, rsync_user and rsync_opt
-        for sec, val in (('main','mon_hosts'), ('vcs','repo'), ('sync','max_size'), \
-        ('sync','rsync_user'), ('sync','rsync_opt')):   
+        # - Get repo, max_size, rsync_user and rsync_opt
+        for sec, val in (('vcs','repo'), ('sync','max_size'), ('sync','rsync_user'), ('sync','rsync_opt')):
             try:
                 c[val] = sanitize(parser.get(sec, val))
                 if c[val].lower() in ('false', '0', 'not'):
                     c[val] = False
-                elif  val == 'mon_hosts':
-                    raise
                 vprint(val +' value:', c[val])
             except:
-                if val == 'mon_hosts':
-                    c['mon_hosts'] = True
                 vprint(val +' get value:', c[val])
-        
+
         # - Get pre_get, post_get, pre_commit, post_commit
         for sec, val in (('sync','pre_get'), ('sync','post_get'), ('vcs','pre_commit'), ('vcs','post_commit')):
             try:
@@ -366,7 +360,7 @@ def main():
                         sys.exit('ERROR: '+ str(c['d_conf']) +' is not a valid d_conf directory')
             except Exception as e:
                 sys.exit('ERROR '+ val + ' variable not defined: '+ str(e))
-        
+
         # - Parse init option
         if options.gitinit:
 
@@ -383,7 +377,7 @@ def main():
                 except Exception as e:
                     sys.stdout.flush()
                     sys.exit('ERROR local repository not initializated: '+ str(e))
-            
+
             elif c['repo']:  # remote repo
                 try:
                     if os.path.isdir(c['d_dest']):
@@ -393,7 +387,7 @@ def main():
                             if not yes_or_not('Do you already did it, continue?'):
                                 vprint('Avoid clonning repository into destination folder: '+c['d_dest'])
                                 sys.exit(0)
-                    else: 
+                    else:
                         vprint('Creating directory', c['d_dest'])
                         os.makedirs(c['d_dest'])
                     print 'Clonning repository...'
@@ -406,8 +400,8 @@ def main():
             else:
                 sys.exit('ERROR initializating repository: ' + str(c['repo']))
             sys.exit(0)
-        
-        # - Parse fetch option
+
+        # - Parse fetch (no commit) option
         if c['fetch']:
             # Inside this if:
             # + Execute pre-get.d
@@ -418,7 +412,6 @@ def main():
             # + Parse hosts section, get list of hosts
             # + Parse roles files
             # + Get directory variable
-            # + Get monitor variable
             # + Get rsync_user and max_size variables
             # + Parse files section, get includes/excludes/forced paths
             # + Write to include/exclude rsync file
@@ -433,31 +426,30 @@ def main():
             # + Execute pre-get.d
             if c['pre_get']:
                 process_folder(c['pre_get'], c['d_conf'], c['d_dest'])
-        
+
             srvfiles = sorted(glob.glob(os.path.join(c['d_conf'],'*.cfg')))  # get files in d_conf dir folder
-        
+
             # + Parse cfg files
             for i in srvfiles:
                 print '- Processing:', i
-        
+
                 p = {
                 'directory': None,
                 'max_size': c['max_size'],
                 'rsync_user': c['rsync_user'],
-                'monitor': c['mon_hosts'],
-                'roles_lines': [],
+                'roles_files': [],
                 'roles_dir': None,
                 'list': [],
                 'cfg_in': [],
                 'cfg_ex': [],
                 'cfg_frz': []}
-        
+
                 try:   # temporary file for include/exclude to rsync
                     _, f_tmp_walk = tempfile.mkstemp()
                     f_walk = open(f_tmp_walk, 'w')
                 except Exception as e:
                     sys.exit('ERROR creating temporary file: ' + str(e))
-        
+
                 vprint('Reading host config file:', i)
                 try:
                     parser = ConfigParser(allow_no_value=True)
@@ -471,40 +463,40 @@ def main():
                         line = (sanitize(line))
                         if not line.startswith('roles_dir'):
                             vprint('Role: ' + line)
-                            p['roles_lines'].append(line)
-        
+                            p['roles_files'].append(line)
+
                     # + Get roles_dir variable
                     try:
                         p['roles_dir'] = os.path.normpath(sanitize(parser.get('roles', 'roles_dir')))+os.sep
                         vprint('roles_dir value:', p['roles_dir'])
                     except Exception as e:
                         vprint('roles_dir get value:', p['roles_dir'])
-        
-                    # + Get roles file lines - Process 
-                    if p['roles_lines'][0]:
-                        for s in p['roles_lines'][:]:  # go over each role
-                            p['roles_lines'].remove(s)  # remove before process
+
+                    # + Get roles file lines - Process
+                    if p['roles_files'][0]:
+                        for s in p['roles_files'][:]:  # go over each role
+                            p['roles_files'].remove(s)  # remove before process
                             s = sanitize(s)
                             if p['roles_dir']:  # check if variable roles dir exist for adding it into the path
-                                p['roles_lines'].append(os.path.join(c['d_conf'], p['roles_dir'], s))
+                                p['roles_files'].append(os.path.join(c['d_conf'], p['roles_dir'], s))
                             else:
-                                p['roles_lines'].append(os.path.join(c['d_conf'], s))
+                                p['roles_files'].append(os.path.join(c['d_conf'], s))
 
-                        for t in p['roles_lines'][:]:  # parse paths for checking the name integrity
-                            p['roles_lines'].remove(t)
+                        for t in p['roles_files'][:]:  # parse paths for checking the name integrity
+                            p['roles_files'].remove(t)
                             role_glob = glob.glob(t)
-                            p['roles_lines'].extend(role_glob)
-                        p['roles_lines'].insert(0, sanitize(i))  # insert own file at first position
-                        p['roles_lines'] = p['roles_lines'][::-1]  # reverse order for hieracally process
-                        print '- Roles:', ', '.join(p['roles_lines'])
+                            p['roles_files'].extend(role_glob)
+                        p['roles_files'].insert(0, sanitize(i))  # insert own file at first position
+                        p['roles_files'] = p['roles_files'][::-1]  # reverse order for hieracally process
+                        print '- Roles:', ', '.join(p['roles_files'])
                     else:
                         raise Exception('WARNING in roles section')
                 except Exception as e:
-                    p['roles_lines'] = []
-                    p['roles_lines'].insert(0, sanitize(i))  # insert parent cfg file at first position
+                    p['roles_files'] = []
+                    p['roles_files'].insert(0, sanitize(i))  # insert parent cfg file at first position
                     vprint('WARNING parsing roles section ' + str(e))
-                vprint('roles value:', p['roles_lines'])
-        
+                vprint('roles value:', p['roles_files'])
+
                 # + Parse hosts section, get list of hosts
                 try:
                     for line, _ in (parser.items('hosts')):
@@ -526,20 +518,20 @@ def main():
                     print 'WARNING Almost, one host must be defined'
                     print 'WARNING Skipping file', i
                     continue
-        
+
                 # + Parse roles files
-                for j in p['roles_lines']: 
+                for j in p['roles_files']:
                     vprint('- Processing:', j)
                     if not os.path.isfile(j):
                         vprint('Invalid file:', j)
                         continue
-        
+
                     try:  # read cfg file
                         parser = ConfigParser(allow_no_value=True)
                         parser.read(j)
                     except Exception as e:
                         sys.exit('ERROR reading cfg file: '+j+' '+ str(e))
-        
+
                     # + Get directory variable
                     try:
                         p['directory'] = os.path.normpath(sanitize(parser.get('main', 'directory')))+os.sep
@@ -549,18 +541,7 @@ def main():
                             vprint('directory empty')
                         else:
                             vprint('directory heritage: ' + p['directory'])
-        
-                    # + Get monitor variable
-                    try:
-                        p['monitor'] = sanitize(parser.get('main', 'monitor'))
-                        if p['monitor'].lower() in ('false', '0', 'not'):
-                            p['monitor'] = False
-                        else:
-                            p['monitor'] = True
-                        vprint('monitor: ', p['monitor'],)
-                    except:
-                        vprint('monitor herietage: ', p['monitor'],)
-        
+
                     # + Get rsync_user and max_size variables
                     for val in ('rsync_user','max_size'):
                         try:
@@ -568,7 +549,7 @@ def main():
                             vprint(val, ': ', p[val],)
                         except:
                             vprint(val +' herietage: ', p[val],)
-        
+
                     # + Parse files section, get includes/excludes/forced paths
                     try:
                         if parser.items('files') != []:
@@ -577,7 +558,7 @@ def main():
                                 line = (sanitize(line))
                                 if detect_range(line):  # detect range inside
                                     vprint('Range detected: ', line)
-                                    line_range = expand_range(line) 
+                                    line_range = expand_range(line)
                                 else:
                                     line_range.append(line)
                                 for lpath in line_range:  # detect each type of line
@@ -594,14 +575,14 @@ def main():
                             vprint('WARNING empty file list')
                     except Exception as e:
                         vprint('WARNING parsing files section in: ' + j + ' ' + str(e))
-        
+
                 # + Write to include/exclude rsync file
                 for val in ('cfg_in', 'cfg_ex', 'cfg_frz'):
                     try:
                         p[val]=sorted(set(p[val]))  # clean duplicates and order
                     except Exception as e:
                         vprint('WARNING sorting: ' + val + ' ' + str(e))
-        
+
                 if p['cfg_frz']:
                     paths_lst_frz = extract_walk(p['cfg_frz'])
                     vprint('Force paths: '+str(p['cfg_frz'])+'->'+str(paths_lst_frz))
@@ -613,18 +594,18 @@ def main():
                     vprint('Exclude paths: '+str(p['cfg_ex'])+'->'+str(paths_lst_ex))
                     for e in paths_lst_ex:
                         f_walk.write('- ' + e + '\n')
-        
+
                 if p['cfg_in']:
                     paths_lst_in = extract_walk(p['cfg_in'])
                     vprint('Include paths: '+str(p['cfg_in'])+'->'+str(paths_lst_in))
                     for e in paths_lst_in:
                         f_walk.write('+ ' + e + '\n')
-        
+
                 f_walk.write('- *\n')  # this line must be always in the file
                 f_walk.seek(0)
-                
+
                 # + Create destination directories
-                for srvname in p['list']:  
+                for srvname in p['list']:
                     try:
                         final_path = os.path.join(c['d_dest'], p['directory'], srvname)
                     except:
@@ -636,66 +617,63 @@ def main():
                             mkpath(final_path)
                         except Exception as e:
                             sys.exit('ERROR creating destination server directory: '+final_path+' - '+str(e))
-        
+
                     # + Fetching content
                     print '- Fetching:', srvname
                     # syncing files, for modify rsync call, the place is the following line:
                     rsync_call = ('rsync', '-'+c['rsync_opt'], '--progress', '--delete-excluded',
-                    '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+p['max_size'], 
-                    '--include-from=' + f_walk.name, '--prune-empty-dirs', 
+                    '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+p['max_size'],
+                    '--include-from=' + f_walk.name, '--prune-empty-dirs',
                     p['rsync_user']+'@'+srvname+':/', final_path)
                     vprint(' '.join(map(str,rsync_call)))
                     try:
                         sys.stdout.flush()
-                        if (call_out(rsync_call, options.silent, c['d_dest']) and p['monitor']) == 0:
+                        if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
                             hosts_ok.append(srvname)
-                        elif p['monitor']:
-                            hosts_bad.append(srvname)
                         else:
-                            hosts_not_mon.append(srvname)
+                            hosts_bad.append(srvname)
                         sys.stdout.flush()
-        
+
                     except Exception as e:
                         sys.stdout.flush()
                         sys.exit('ERROR executing rsync command: ' + str(e))
-        
+
                 f_walk.close()
-        
+
                 if options.verbose:
                     vprint('WARNING temporary files not deleted in verbose mode')
                 else:
                     os.remove(f_tmp_walk)
-        
+
             # + Execute post-get.d
             if c['post_get']:
                 process_folder(c['post_get'], c['d_conf'], c['d_dest'])
-        
+
             time_fetched = time.time() - fetch_time
             print '- Fetching done'
         else:
             vprint('Avoid fetching files')
-        
+
         # + Parse commit option
         if c['commit'] and c['repo']:
 
             commit_time = time.time()
             test_repo_dir(c['d_dest'], c['commit'])
             print '- Committing start'
-        
+
             # Execute pre-commit.d
             if c['pre_commit']:
                 process_folder(c['pre_commit'], c['d_conf'], c['d_dest'])
-        
+
             # Parse message option
             if options.message:
                 message = options.message
             else:
                 message = 'Keepconf commit at '+time.strftime('%H:%M:%S - %A/%B/%Y')
-                if hosts_ok or hosts_bad or hosts_not_mon:
+                if hosts_ok or hosts_bad:
                     message += '\nHosts ok: '+'['+ str(len(hosts_ok))+'] ' + ', '.join(hosts_ok)
                     message += '\nHosts bad: '+'['+ str(len(hosts_bad))+'] ' + ', '.join(hosts_bad)
-                    message += '\nHosts not mon: '+'['+ str(len(hosts_not_mon))+'] ' + ', '.join(hosts_not_mon)
-        
+
             # Commit into local or remote repository
             if c['repo'] == 'local':
                 print '- Committing into local repository'
@@ -719,32 +697,31 @@ def main():
                     sys.stdout.flush()
                     sys.exit('ERROR committing into remote repository: ' + str(e))
             sys.stdout.flush()
-        
+
             # Execute post-commit.d
             if c['post_commit']:
-                process_folder(c['post_commit'], c['d_conf'], c['d_dest']) 
-        
+                process_folder(c['post_commit'], c['d_conf'], c['d_dest'])
+
             time_committed = time.time() - commit_time
             print '- Committing done'
         else:
             vprint('Avoid committing changes')
-        
+
         # + Print stats
         if c['fetch'] or (c['commit'] and c['repo']):
             print('- ')
-        
+
         if c['fetch']:
             print('- Hosts rsync\'ed: ' +'['+ str(len(hosts_ok)) +'] '+ ', '.join(hosts_ok))
             print('- Hosts not rsync\'ed: ' +'['+ str(len(hosts_bad)) +'] '+ ', '.join(hosts_bad))
-            print('- Hosts not monitorized: ' +'['+ str(len(hosts_not_mon)) +'] '+ ', '.join(hosts_not_mon))
             print('- Fetched in: %.2f seconds' % time_fetched)
         if c['commit'] and c['repo']:
             print('- Committed in: %.2f seconds' % time_committed)
-        
+
         total_time = time.time() - start_time
         if c['fetch'] or c['commit']:
             print('- Completed in: %.2f seconds' % total_time)
-        
+
         # + Write csv report file
         if c['f_monitor']:
 
@@ -760,10 +737,6 @@ def main():
                     hosts_ok_list = "," +','.join(['\"'+ x +'\"' for x in hosts_ok])
                 else:
                     hosts_ok_list = ''
-                if hosts_not_mon:
-                    hosts_not_mon_list = "," +','.join(['\"'+ x +'\"' for x in hosts_not_mon])
-                else:
-                    hosts_not_mon_list = ''
                 with open(c['f_monitor'], "a") as file_monitor:
                     try:
                         file_monitor.write('\"CFG-FILE\",\"' + os.path.basename(options.conffile)+'\"\n')
@@ -777,10 +750,6 @@ def main():
                         file_monitor.write('\"BAD\",\"' + str(len(hosts_bad)) + '\"' + hosts_bad_list + '\n')
                     except:
                         file_monitor.write('\"BAD\",\"0\"\n')
-                    try:
-                        file_monitor.write('\"NOT\",\"' + str(len(hosts_not_mon)) + '\"' + hosts_not_mon + '\n')
-                    except:
-                        file_monitor.write('\"NOT\",\"0\"\n')
                     try:
                         file_monitor.write('\"FETCH-T\",\"%.2f' % time_fetched + '\"\n')
                     except:

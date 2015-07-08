@@ -22,7 +22,7 @@ env.files /var/tmp/keepconf-mon.csv
 Ricardo F. <rfrail3@yahoo.es>
 
 =head1 VERSION
-v.1.1.0
+v.1.1.1
 
 =head1 LICENSE
 
@@ -39,7 +39,7 @@ GPLv2
 
 
 if [ "$1" = "autoconf" ]; then
-	echo yes 
+	echo yes
 	exit 0
 fi
 
@@ -55,7 +55,7 @@ if [ "$1" = "config" ]; then
 	echo 'graph_info Indicate the status of a keepconf execution.'
 
 	for i in ${LIST}; do
- 
+
                 HNAME=`echo ${i} | md5sum | cut -d - -f1 | sed 's/ //g'`
 
 		NAME=`cat ${i}  | grep ^\"CFG-FILE\" | awk -F, '{print $2}' | tr -d '"'`
@@ -68,9 +68,6 @@ if [ "$1" = "config" ]; then
         	echo "bad${HNAME}.type GAUGE"
 	        echo "bad${HNAME}.min 0"
 
-        	echo "not${HNAME}.label Not Mon. ${NAME}"
-	        echo "not${HNAME}.type GAUGE"
-        	echo "not${HNAME}.min 0"
 	done
 
 	exit 0
@@ -79,11 +76,9 @@ fi
 for i in ${LIST}; do
 	OK=`cat ${i}  | grep ^\"OK\" | awk -F, '{print $2}' | tr -d '"'`
 	BAD=`cat ${i}  | grep ^\"BAD\" | awk -F, '{print $2}' | tr -d '"'`
-	NOT=`cat ${i}  | grep ^\"NOT\" | awk -F, '{print $2}' | tr -d '"'`
 
         HNAME=`echo ${i} | md5sum | cut -d - -f1 | sed 's/ //g'`
 
 	echo "ok${HNAME}.value `echo ${OK}`"
 	echo "bad${HNAME}.value `echo ${BAD}`"
-	echo "not${HNAME}.value `echo ${NOT}`"
 done
