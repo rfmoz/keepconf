@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 1.0.02
+                             version 1.1.00
                                Ricardo F.
-                              08/July/2015
+                              17/July/2015
 
 
 
@@ -37,13 +37,8 @@ Almost these version of the following software:
    git 1.7
 
 A ssh-keys connection to the target hosts. Password prompt is not supported.
-
 ** NOTE: Please, be sure that the configured user can connect to the target
-host without any prompt, especially the first time when ssh ask for checking
-new fingerprints. For example:
-"The authenticity of host '[ip] ([ip])' can't be established.
-RSA key fingerprint is [large_number].
-Are you sure you want to continue connecting (yes/no)?""
+host without any prompt.
 
 A configuration file, recomended in "/etc/keepconf/keepconf.cfg"
 
@@ -533,3 +528,5 @@ into the keepconf github account.
 
 If you found any bugs, please report it with all information as you can
 (a verbose output its helpfull). Thanks.
+
+Inside the rsync call
