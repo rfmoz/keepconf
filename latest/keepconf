@@ -621,11 +621,13 @@ def main():
                     # + Fetching content
                     print '- Fetching:', srvname
                     # syncing files, for modify rsync call, the place is the following line:
-                    rsync_call = ('rsync',
-                    '-e', 'ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet',
-                    '-'+c['rsync_opt'], '--progress', '--delete-excluded', '--timeout='+c['rsync_timeout'], 
-                    '--ignore-errors', '--max-size='+p['max_size'], '--include-from=' + f_walk.name, 
-                    '--prune-empty-dirs', p['rsync_user']+'@'+srvname+':/', final_path)
+                    if options.verbose:
+                        ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null'
+                    else:
+                        ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet'
+                    rsync_call = ('rsync', '-e', ssh_rsync_opt, '-'+c['rsync_opt'], '--progress', '--delete-excluded', 
+                    '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+p['max_size'], 
+                    '--include-from=' + f_walk.name, '--prune-empty-dirs', p['rsync_user']+'@'+srvname+':/', final_path)
                     vprint(' '.join(map(str,rsync_call)))
                     try:
                         sys.stdout.flush()
