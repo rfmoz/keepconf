@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 1.1.00
+                             version 1.2.00
                                Ricardo F.
-                              17/July/2015
+                              19/July/2015
 
 
 
@@ -44,6 +44,7 @@ A configuration file, recomended in "/etc/keepconf/keepconf.cfg"
 
 Some free space for store the remote files.
 
+In the remote hosts, only rsync and a ssh client.
 
 ============================
 | Command line  parameters |
@@ -164,7 +165,7 @@ Inside the configuration file, anything following a sharp ('#'), semicolon
 if is possible, avoid it.
 All names of sections and variables must be only in lowercase.
 Take care of the tabs and spaces at the beginning of each line, dont add any
-of both.
+of them.
 
 [main]
   Section for general variables. The following are available inside here:
@@ -338,9 +339,8 @@ directory = /
 max_size = 25M
 rsync_user = root
 [roles]
-roles_dir = example_dir/
-example1.cfg
-example2.cfg
+example_dir/example1.cfg
+example_dir/example2.cfg
 [hosts]
 host1
 host2
@@ -354,7 +354,7 @@ host2
 Anything following a sharp ('#') a semicolon (';') or a comma (',') is
 ignored. Space character is allowed, but if is possible, avoid it use.
 Take care of the tabs and spaces at the beginning of each line, dont add any
-of both.
+of them.
 
 The section headers are a must before include their respective variables.
 Only one hosts must be defined for considering the file valid, the other
@@ -366,6 +366,7 @@ sections and variables are optional.
   directory=
     Path for store the files fetched inside "d_dest" directory. Is a usefull
     option for separate different enviorments.
+
     If starts wiht a slash '/' it refers as a full path.
     If not starts with '/', the path will be: d_dest + directory + host name
     If directory is not set, the path will be: d_dest + host name
@@ -394,31 +395,16 @@ sections and variables are optional.
 
 [roles]
   Section for define a list of files for include their content as a group
-  of properties. One per line.
+  of properties (not hosts or other roles). One per line.
   This section is not allowed inside a role file.
+  Upper in list have precedence over others, the main file located in 'd_conf'
+  which have the roles references have precedence over all.
 
-  roles_dir=
-    Define one directory for include before each role path.
-    If starts wiht a slash '/' it refers as a full path, if not, d_conf
-    path is append before it.
-
-    Examples:
-           roles_dir = False  # (Default)
-           roles_dir = directory1  # 'd_conf' + roles_dir
-           roles_dir = /directory1  # Full path
-
-
-  Except the 'roles_dir' variable, the lines defined here will be treated as
-  a roles file for process. Upper in list have precedence over others, the
-  main file located in 'd_conf' which have the roles references have
-  precedence over all.
   For role files, this host configuration file format is required, but
-  they have exceptions, "[Roles]" and "[Hosts]" section are not available.
+  it have exceptions, "[roles]" and "[hosts]" section are not available.
+
   If starts wiht a slash '/' it refers as a full path.
-  If not starts with '/' and "roles_dir" exists and not starts with '/'
-  the path will be: d_conf + roles_dir + file
-  If not starts with '/' and "roles_dir" exists and starts with '/' the
-  path will be: roles_dir + file
+  If not starts with '/' the path will be: d_conf + file
   Its available the use of asterisk '*', interrogation '?' and ranges defined
   into brackets [1-25] for willcard match.
 
@@ -429,19 +415,9 @@ sections and variables are optional.
          grp/linux.cfg
 
          [roles]
-         roles_dir = grp
-         host1.cfg
-         production*.cfg
-         linux.cfg
-
-         [roles]
-         roles_dir = /etc/keepconf/hosts/grp
-         host1.cfg
-         production?.cfg
-         linux.cfg
-
-         [roles]
          /etc/keepconf/hosts/grp/linux.cfg
+         /etc/keepconf/hosts_def/grp/host1.cfg
+         grp/production[1-5].cfg
 
 
 [hosts]
@@ -518,15 +494,17 @@ And for rotate the log generated, add a file called "keepconf" to
 ================
 
 For avoid problems with section definition, range brackets are not allowed
-at the first position of a line.
+at the beginning of a line.
 
 By default, paths ended in '/' fetch all content inside it only, if ends with
 '/*' fetch all content inside it recursively.
 
-A munin pluging is written for graph the csv reports of keepconf, look for it
+A munin pluging was written for graph the csv reports of keepconf, look for it
 into the keepconf github account.
+
+Inside the rsync call, the arguments StrictHostKeyChecking=no, LogLevel=quiet
+and UserKnownHostsFile=/dev/null are passed for avoid annoying startup issues.
 
 If you found any bugs, please report it with all information as you can
 (a verbose output its helpfull). Thanks.
 
-Inside the rsync call

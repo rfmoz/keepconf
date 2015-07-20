@@ -1,7 +1,7 @@
 keepconf
 ========
 
-Keepconf is a agentless tool for backup and track files from remote hosts, using rsync and git for the purpose. It was inspired in etckeeper.
+Keepconf is a agentless tool for backup and track files from remote hosts, using rsync and git for the purpose.
 
 
 ### Basic Installation and usage
@@ -29,7 +29,7 @@ Initialize the folders and repository:
 
         keepconf -i
 
-Make a simple file for backup some paths of the local host, take care of the tabs and spaces before each line, dont add any of both:
+Make a simple file for backup some paths of the local host, take care of the tabs and spaces at the beginning of each line, dont add any of them:
 
 	printf "%s\n" '[main]' 'directory=myhost/' '[hosts]' 'localhost' '[files]' '/etc/' '!/etc/passwd' '!/etc/group' '!/etc/shadow' '/proc/sys/kernel/*' > /etc/keepconf/hosts/localhost.cfg
 
