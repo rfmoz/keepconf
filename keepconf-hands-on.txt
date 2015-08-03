@@ -1,0 +1,99 @@
+                         ----------------------
+                                Keepconf
+                                Hands On
+                         ----------------------
+                               Ricardo F.
+                              31/July/2015
+
+
+1.- Abstract
+2.- Ssh configuration
+2.1.- For backup storage host
+2.2.- For any host to backup
+
+3.- Rsync configuration
+4.- Keepconf configuration
+
+
+============
+| Abstract |
+============
+
+This document is a hands on guide for start from scrach, covering the base
+ssh and rsync configuration and various keepconf scenarios.
+
+The following hosts are used for the examples:
+
+backups.example.com - Backup storage  
+web1.example.com    - Webserver
+
+bal1.example.com    - Load balancer
+app1.example.com    - Application server
+db1.example.com     - Databse server 
+nfs1.example.com    - Nfs server
+
+
+=====================--------------------------
+| Ssh configuration | For backup storage host | 
+=====================--------------------------
+
+Prerequisites:
+
+ - ssh client
+ - rsync > 3.0
+ - git > 1.7
+ - python 2.7 with this modules:
+     sys, optparse, os, glob, time, string, re, ConfigParser,
+     tempfile, subprocess, distutils, collections
+
+
+
+=====================-------------------------
+| Ssh configuration | For any host to backup | 
+=====================-------------------------
+
++ Prerequisites:
+
+ - ssh server
+ - rsync > 3.0
+ - a user, for example "backup", for connect into.
+
+
++ Generate the ssh key for the user "backup" without passphrase:
+
+backcup@web1.example.com:~$ ssh-keygen -t dsa -P ''  -f ~/.ssh/id_dsa
+Generating public/private dsa key pair.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/backup/.ssh/id_dsa.
+Your public key has been saved in /home/backup/.ssh/id_dsa.pub.
+The key fingerprint is:
+64:ed:1e:1f:a4:91:b4:a2:a3:f0:25:94:2d:03:87:70 backup@web1.example.com
+The key's randomart image is:
++---[DSA 1024]----+
+|..E..     .      |
+| ..o o   o o     |
+|    = . + = .    |
+|   . o + o +     |
+|  . . + S + .    |
+|   o + . . o .   |
+|    o     . .    |
+|                 |
+|                 |
++-----------------+
+
+
++ Authorize the key for connect into it without password:
+backup@web1.example.com:~$ cat ~/.ssh/id_dsa.pub >> ~/.ssh/authorized_keys
+
+
+A ssh-keys connection to the target hosts. Password prompt is not supported.
+** NOTE: Please, be sure that the configured user can connect to the target
+host without any prompt.
+
+A configuration file, recomended in "/etc/keepconf/keepconf.cfg"
+
+Some free space for store the remote files.
+
+In the remote hosts, only rsync and a ssh client.
+
