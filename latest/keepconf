@@ -26,7 +26,7 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-version = '1.2.00'
+version = '1.2.01'
 
 def process_folder(str_folder, conf, dest):
     """Execute all files located in a external folder"""
@@ -661,7 +661,7 @@ def main():
 
             # Parse message option
             if options.message:
-                message = options.message
+                message = 'Keepconf: ' + options.message
             else:
                 message = 'Keepconf commit at '+time.strftime('%H:%M:%S - %A/%B/%Y')
                 if hosts_ok or hosts_bad:

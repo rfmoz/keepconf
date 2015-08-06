@@ -317,4 +317,4 @@ commit df0ce9a83f3d7e509dfcaae3895318ff7db61b41
 Author: root <root@backups.example.com>
 Date:   Thu Aug 6 10:19:50 2015 +0200
 
-    Deleting old host
+    Keepconf: Deleting old host
