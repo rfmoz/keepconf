@@ -7,9 +7,20 @@
 
 
 
-============
-| Abstract |
-============
+
+1.- Abstract
+2.- Ssh configuration, for any host to backup
+3.- Ssh configuration, for backup storage host 
+4.- Keepconf configuration, for backup storage host
+5.- Keepconf case, adding new host
+6.- Keepconf case, removing old host
+
+
+
+
+================
+| 1.- Abstract |
+================
 
 This document is a hands on guide for starting from scratch, covering the base
 ssh and rsync configuration and various keepconf scenarios.
@@ -18,12 +29,13 @@ The following hosts are used for the examples:
 
 backups.example.com - Backup storage  
 web1.example.com    - Webserver
+web2.example.com    - Webserver
 
 
 
-=====================-------------------------
-| Ssh configuration | For any host to backup | 
-=====================-------------------------
+=========================-------------------------
+| 2.- Ssh configuration | For any host to backup | 
+=========================-------------------------
 
 + Prerequisites:
 
@@ -71,9 +83,9 @@ backman@web1:~$ cat ~/.ssh/id_dsa.pub >> ~/.ssh/authorized_keys
 
 
 
-=====================--------------------------
-| Ssh configuration | For backup storage host | 
-=====================--------------------------
+=========================--------------------------
+| 3.- Ssh configuration | For backup storage host | 
+=========================--------------------------
 
 Prerequisites:
 
@@ -117,9 +129,10 @@ backman@web1:~$
 
 
 
-==========================--------------------------
-| Keepconf configuration | For backup storage host | 
-==========================--------------------------
+
+==============================--------------------------
+| 4.- Keepconf configuration | For backup storage host | 
+==============================--------------------------
 
 
 + Set the default backup user for keepconf, uncomment the rsync_user line and change the user to "backman":
@@ -134,7 +147,7 @@ root@backups:~# vi /etc/keepconf/keepconf.cfg
 root@backups:~# rm -rf /etc/keepconf/hosts/*
 
 
-+ Create a file called "/etc/keepconf/hosts/web1.cfg" and add the following example lines:
++ Create a file called "/etc/keepconf/hosts/web-servers.cfg" and add the following example lines:
 
 [hosts]
 web1.example.com
@@ -147,7 +160,7 @@ web1.example.com
 
 root@backups:~# keepconf -s
 - Fetching start
-- Processing: /etc/keepconf/hosts/web1.cfg
+- Processing: /etc/keepconf/hosts/web-servers.cfg
 - Fetching: web1.example.com
 - Finding files in /etc/keepconf/post-get.d/
 - Processing: /etc/keepconf/post-get.d/01-remove-binary
@@ -205,3 +218,103 @@ root@backups:~# vi /etc/cron.d/keepconf
 
 
 
+
+
+=====================------------------
+| 5.- Keepconf case | Adding new host | 
+=====================------------------
+
++ Configure "web2" as described in section 2.- Ssh configuration, for any host to backup.
+
++ Add the new host to the configuration file, in this case "web2" to "/etc/keepconf/hosts/web-servers.cfg":
+
+  Previous state:
+    [hosts]
+    web1.example.com
+    [files]
+    /etc/passwd
+    /var/lib/dpkg/status
+
+  Posterior state, option with full name:
+    [hosts]
+    web1.example.com
+    web2.example.com
+    [files]
+    /etc/passwd
+    /var/lib/dpkg/status
+
+  Posterior state, option using wildcard:
+    [hosts]
+    web[1-2].example.com
+    [files]
+    /etc/passwd
+    /var/lib/dpkg/status
+
+
++ Execute keepconf normally, and check that "web2" is fetched:
+
+root@backups:~# keepconf
+
+
++ If all went ok, inside "d_dest" directory there are a new folder for the new server with their files:
+
+root@backups:~# cd /var/keepconf/hosts/
+root@backups:/var/keepconf/hosts/# ls
+web1.example.com  web2.example.com
+
+
++ And the corresponding commit with the new host:
+
+root@backups:/var/keepconf/hosts/# git log
+commit  dff0b7add12856bcfa8ae00d0bc573a841235f37
+Author: root <root@backups.example.com>
+Date:   Tue Aug 5 12:22:01 2015 +0200
+
+    Keepconf commit at 12:22:01 - Thursday/August/2015
+    Hosts ok: [2] web1.example.com, web2.example.com
+    Hosts bad: [0]
+
+
+
+
+=====================--------------------
+| 6.- Keepconf case | Removing old host | 
+=====================--------------------
+
+
++ Remove the host from the configuration file, in this case "web2" from "/etc/keepconf/hosts/web-servers.cfg": 
+
+  Previous state:
+    [hosts]
+    web1.example.com
+    web2.example.com
+    [files]
+    /etc/passwd
+    /var/lib/dpkg/status
+
+  Posterior state:
+    [hosts]
+    web1.example.com
+    [files]
+    /etc/passwd
+    /var/lib/dpkg/status
+
+
++ Remove the fetched files from the repo directory "/var/keepconf/hosts/":
+
+root@backups:/var/keepconf/hosts/# git rm -r web2.example.com
+
+
++ Execute keepconf with commit only and an informative message:
+
+root@backups:/var/keepconf/hosts/# keepconf -c -m "Deleting old host"'
+
+
++ Wich produce the following commit:
+
+root@backups:/var/keepconf/hosts/# git log
+commit df0ce9a83f3d7e509dfcaae3895318ff7db61b41
+Author: root <root@backups.example.com>
+Date:   Thu Aug 6 10:19:50 2015 +0200
+
+    Deleting old host
