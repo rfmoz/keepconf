@@ -14,6 +14,7 @@
 4.- Keepconf configuration, for backup storage host
 5.- Keepconf case, adding new host
 6.- Keepconf case, removing old host
+7.- Keepconf case, using roles
 
 
 
@@ -318,3 +319,37 @@ Author: root <root@backups.example.com>
 Date:   Thu Aug 6 10:19:50 2015 +0200
 
     Keepconf: Deleting old host
+
+
+
+
+=====================--------------
+| 7.- Keepconf case | Using roles | 
+=====================--------------
+
+
++ Set the file "/etc/keepconf/hosts/web-servers.cfg" as follows: 
+
+    [roles]
+    roles/linux-base.cfg
+    [hosts]
+    web1.example.com
+    web2.example.com
+    [files]
+    /etc/apache2/*
+    /var/www/web/mydocs/*
+
+
++ Create the new folder for roles and the new file with the following content. As noted, the path start without slash character and for that reason, "d_conf" is adeed before.
+
+root@backups:/var/keepconf/hosts/# mkdir roles && cd roles
+root@backups:/var/keepconf/hosts/roles/# vi linux-base.cfg
+
+    [main]
+    max_size = 25M  # max file limit
+    [files]
+    /etc/passwd
+    /var/lib/dpkg/status
+
+
++ Execute keepconf, now the "linux-base.cfg" files will be fetched and a global limit of 25Mb will be applied to all files.
