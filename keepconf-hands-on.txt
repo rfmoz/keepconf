@@ -340,7 +340,7 @@ Date:   Thu Aug 6 10:19:50 2015 +0200
     /var/www/web/mydocs/*
 
 
-+ Create the new folder for roles and the new file with the following content. As noted, the path start without slash character and for that reason, "d_conf" is adeed before.
++ Create the new folder for roles and the new file with the following content. As noted, the path start without slash character and for that reason, "d_conf" + 'roles/' is adeed before.
 
 root@backups:/var/keepconf/hosts/# mkdir roles && cd roles
 root@backups:/var/keepconf/hosts/roles/# vi linux-base.cfg

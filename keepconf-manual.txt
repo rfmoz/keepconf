@@ -2,7 +2,7 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 1.2.02
+                             version 1.2.10
                                Ricardo F.
                              26/August/2015
 
@@ -339,7 +339,7 @@ directory = /
 max_size = 25M
 rsync_user = root
 [roles]
-example_dir/example1.cfg
+example1.cfg
 example_dir/example2.cfg
 [hosts]
 host1
@@ -404,20 +404,20 @@ sections and variables are optional.
   it have exceptions, "[roles]" and "[hosts]" section are not available.
 
   If starts wiht a slash '/' it refers as a full path.
-  If not starts with '/' the path will be: d_conf + path
+  If not starts with '/' the path will be: d_conf + 'roles/' + path
   Its available the use of asterisk '*', interrogation '?' and ranges defined
   into brackets [1-25] for willcard match.
 
   Examples:
          [roles]
-         grp/host1.cfg
-         grp/production[1-5].cfg
-         grp/linux.cfg
+         host1.cfg
+         production[1-5].cfg
+         linux.cfg
 
          [roles]
-         /etc/keepconf/hosts/grp/linux.cfg
-         /etc/keepconf/hosts_def/grp/host1.cfg
-         grp/production[1-5].cfg
+         /etc/keepconf/hosts/roles/linux.cfg
+         /etc/keepconf/hosts_def/roles/host1.cfg
+         production[1-5].cfg
 
 
 [hosts]

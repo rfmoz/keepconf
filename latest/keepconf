@@ -26,7 +26,7 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-version = '1.2.02'
+version = '1.2.10'
 
 def process_folder(str_folder, conf, dest):
     """Execute all files located in a external folder"""
@@ -211,6 +211,7 @@ def main():
 
         f_conf = '/etc/keepconf/keepconf.cfg'  # default configuration file
         hosts_ok, hosts_bad = [], []
+	d_roles = 'roles/'  # default roles directory inside 'd_conf'
 
         c = {
         'd_conf': False,
@@ -467,7 +468,7 @@ def main():
                         for s in p['roles_files'][:]:  # go over each role
                             p['roles_files'].remove(s)  # remove before process
                             s = sanitize(s)
-                            p['roles_files'].append(os.path.join(c['d_conf'], s))
+                            p['roles_files'].append(os.path.join(c['d_conf'] + d_roles, s))
 
                         for t in p['roles_files'][:]:  # parse paths for checking the name integrity
                             p['roles_files'].remove(t)
