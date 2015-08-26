@@ -26,7 +26,7 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-version = '1.2.01'
+version = '1.2.02'
 
 def process_folder(str_folder, conf, dest):
     """Execute all files located in a external folder"""
@@ -474,7 +474,8 @@ def main():
                             role_glob = glob.glob(t)
                             if not role_glob:
                                 vprint('WARNING, excluding invalid role file: ' + str(t)) 
-                            p['roles_files'].extend(role_glob)
+                            else:
+                                p['roles_files'].extend(role_glob)
                         p['roles_files'].insert(0, sanitize(i))  # insert own file at first position
                         p['roles_files'] = p['roles_files'][::-1]  # reverse order for hieracally process
                         print '- Roles:', ', '.join(p['roles_files'])

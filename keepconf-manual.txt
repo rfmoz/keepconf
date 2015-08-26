@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 1.2.00
+                             version 1.2.02
                                Ricardo F.
-                              19/July/2015
+                             26/August/2015
 
 
 
@@ -404,7 +404,7 @@ sections and variables are optional.
   it have exceptions, "[roles]" and "[hosts]" section are not available.
 
   If starts wiht a slash '/' it refers as a full path.
-  If not starts with '/' the path will be: d_conf + file
+  If not starts with '/' the path will be: d_conf + path
   Its available the use of asterisk '*', interrogation '?' and ranges defined
   into brackets [1-25] for willcard match.
 
