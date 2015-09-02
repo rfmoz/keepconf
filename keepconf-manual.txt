@@ -474,9 +474,13 @@ execution time:
 | Schedule execution |
 ======================
 
-For have a automate backup with a log, this line can be added to the cron
+For have an automate backup with log, this line can be added to the cron
 daemon:
-15 06 * * * keepconf &> /var/log/keepconf.log
+  With traditional syslog:
+    15 06 * * * keepconf &> /var/log/keepconf.log
+
+  With systemd journalctl:
+    15 06 * * * systemd-cat keepconf
 
 And for rotate the log generated, add a file called "keepconf" to
 /etc/logrotate.d with this content:
