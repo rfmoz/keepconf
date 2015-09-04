@@ -156,7 +156,7 @@ web1.example.com
 /etc/passwd
 /var/lib/dpkg/status
 
-+ Initialize the repo (keepconf create it). If a remote repo is used, this step is not neccesary:
++ Initialize the repo, keepconf create if is local of fetch if is remote:
 
 root@backups:~# keepconf -i
 Initialized empty Git repository in /var/keepconf/hosts/.git
