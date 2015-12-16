@@ -28,6 +28,71 @@ except Exception as e:
 
 version = '1.2.10'
 
+def get_arguments(f_conf):
+    """Get arguments from command line"""
+    parser = optparse.OptionParser()
+    parser.add_option('-f', '--conf',
+                      dest='conffile',
+                      default=f_conf,
+                      action='store',
+                      help='configuration file',
+                      metavar="FILE")
+    parser.add_option('-i', '--init',
+                      dest='gitinit',
+                      default=False,
+                      action='store_true',
+                      help='initialize git repostory')
+    parser.add_option('-n', '--nocommit',
+                      dest='commit',
+                      default=True,
+                      action='store_false',
+                      help='avoid commit changes')
+    parser.add_option('-c', '--commitonly',
+                      dest='commitonly',
+                      default=True,
+                      action='store_false',
+                      help='only commit changes')
+    parser.add_option('-m', '--message',
+                      dest='message',
+                      default=False,
+                      action='store',
+                      help='commit message',
+                      metavar="TEXT")
+    parser.add_option('-s', '--silent',
+                      dest='silent',
+                      default=False,
+                      action='store_true',
+                      help='silent fetching output')
+    parser.add_option('-x', '--xilent',
+                      dest='xilent',
+                      default=False,
+                      action='store_true',
+                      help='silent commit output')
+    parser.add_option('-v', '--verbose',
+                      dest='verbose',
+                      default=False,
+                      action='store_true',
+                      help='verbose output')
+    parser.add_option('-V', '--version',
+                      dest='version',
+                      default=False,
+                      action='store_true',
+                      help='show version')
+    options, _ = parser.parse_args()
+
+    # - Parse verbose option
+    global enable_verbose
+    if options.verbose:
+        enable_verbose = True
+    else:
+        enable_verbose = False
+
+    # - Parse version option
+    if options.version:
+        print('keepconf version', version)
+        sys.exit(0)
+    return options
+
 def process_folder(str_folder, conf, dest):
     """Execute all files located in a external folder"""
     if not os.path.isdir(str_folder):
@@ -229,68 +294,7 @@ def main():
         'post_commit': False,
         'repo': 'local'}
 
-        # - Read command line options
-        parser = optparse.OptionParser()
-        parser.add_option('-f', '--conf',
-                          dest='conffile',
-                          default=f_conf,
-                          action='store',
-                          help='configuration file',
-                          metavar="FILE")
-        parser.add_option('-i', '--init',
-                          dest='gitinit',
-                          default=False,
-                          action='store_true',
-                          help='initialize git repostory')
-        parser.add_option('-n', '--nocommit',
-                          dest='commit',
-                          default=True,
-                          action='store_false',
-                          help='avoid commit changes')
-        parser.add_option('-c', '--commitonly',
-                          dest='commitonly',
-                          default=True,
-                          action='store_false',
-                          help='only commit changes')
-        parser.add_option('-m', '--message',
-                          dest='message',
-                          default=False,
-                          action='store',
-                          help='commit message',
-                          metavar="TEXT")
-        parser.add_option('-s', '--silent',
-                          dest='silent',
-                          default=False,
-                          action='store_true',
-                          help='silent fetching output')
-        parser.add_option('-x', '--xilent',
-                          dest='xilent',
-                          default=False,
-                          action='store_true',
-                          help='silent commit output')
-        parser.add_option('-v', '--verbose',
-                          dest='verbose',
-                          default=False,
-                          action='store_true',
-                         help='verbose output')
-        parser.add_option('-V', '--version',
-                          dest='version',
-                          default=False,
-                          action='store_true',
-                          help='show version')
-        options, _ = parser.parse_args()
-
-        # - Parse verbose option
-        global enable_verbose
-        if options.verbose:
-            enable_verbose = True
-        else:
-            enable_verbose = False
-
-        # - Parse version option
-        if options.version:
-            print('keepconf version', version)
-            sys.exit(0)
+        options = get_arguments(f_conf)
 
         # - Get and parse configuration file
         vprint('Reading configuration file:', options.conffile)
