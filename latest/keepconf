@@ -452,6 +452,7 @@ def main():
                 vprint('Reading host config file:', i)
                 try:
                     parser = ConfigParser(allow_no_value=True)
+                    parser.optionxform = str
                     parser.read(i)
                 except Exception as e:
                     sys.exit('ERROR reading host config file: '+ str(e))
@@ -519,6 +520,7 @@ def main():
 
                     try:  # read cfg file
                         parser = ConfigParser(allow_no_value=True)
+                        parser.optionxform = str
                         parser.read(j)
                     except Exception as e:
                         sys.exit('ERROR reading cfg file: '+j+' '+ str(e))
