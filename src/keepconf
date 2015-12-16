@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # keepconf - Backup and track files from hosts keeping them inside a repository
@@ -17,8 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 try:
-    import sys, optparse, os, glob, time, string, re, tempfile
-    from ConfigParser import ConfigParser
+    import sys, optparse, os, glob, time, string, re, tempfile, logging
+    from configparser import ConfigParser
     from subprocess import call
     from distutils.util import strtobool
     from distutils.dir_util import mkpath
@@ -33,13 +33,13 @@ def process_folder(str_folder, conf, dest):
     if not os.path.isdir(str_folder):
         vprint('WARNING '+ str_folder +' not exists')
         return
-    print '- Finding files in ' + str_folder
+    print('- Finding files in ' + str_folder)
     folder_files = sorted(glob.glob(str_folder + '*'))  # get files in folder
     for b in folder_files:
         try:
-            print '- Processing:', b
+            print('- Processing:', b)
             if not (os.path.isfile(b) and os.access(b, os.X_OK)):  # only execute executable files
-                print 'WARNING nothing done in non executable file ' + b
+                print('WARNING nothing done in non executable file ' + b)
             else:
                 try:
                     sys.stdout.flush()
@@ -81,7 +81,7 @@ def expand_range(line=None):
         (head, nrange, tail) = line.replace('[', '|', 1).replace(']', '|', 1).split('|')
         bounds = nrange.split("-")
         if len(bounds) != 2 and len(bounds) != 3:
-            print "WARNING: Range incorrectly specified"
+            print("WARNING: Range incorrectly specified")
             raise
         beg = bounds[0]
         end = bounds[1]
@@ -92,12 +92,12 @@ def expand_range(line=None):
         if not beg:
             beg = "0"
         if not end:
-            print "WARNING: Range end value missing"
+            print("WARNING: Range end value missing")
             raise
         if beg[0] == '0' and len(beg) > 1:
             rlen = len(beg)  # range length formatting hint
             if rlen != len(end):
-                print "WARNING: Range format incorrectly specified"
+                print("WARNING: Range format incorrectly specified")
                 raise
             fill = lambda _: str(_).zfill(rlen)  # range sequence
         else:
@@ -107,7 +107,7 @@ def expand_range(line=None):
             i_beg = string.ascii_letters.index(beg)
             i_end = string.ascii_letters.index(end)
             if i_beg > i_end:
-                print "WARNING: Range format invalid"
+                print("WARNING: Range format invalid")
                 raise
             seq = string.ascii_letters[i_beg:i_end+1]
         except ValueError:  # not an alpha range
@@ -125,7 +125,7 @@ def expand_range(line=None):
 def sanitize(text_value):
     """Remove especial characters"""
     excluded = "[\',\",\;,\,,\|,\<,\>]"  # excluded characters
-    resultd = re.sub(excluded, '', (string.strip(text_value.split('#', 1)[0].split(';', 1)[0].split(',', 1)[0])))
+    resultd = re.sub(excluded, '', ((text_value.split('#', 1)[0].split(';', 1)[0].split(',', 1)[0]).strip()))
     if resultd:
         return resultd
     else:
@@ -175,8 +175,8 @@ def vprint(*args):
     """Print verbose information"""
     if enable_verbose:
         for arg in args:
-            print arg,
-        print
+            sys.stdout.write(str(arg))
+        print('')
 
 #  Some test for avoid annoying errors
 try:
@@ -211,7 +211,7 @@ def main():
 
         f_conf = '/etc/keepconf/keepconf.cfg'  # default configuration file
         hosts_ok, hosts_bad = [], []
-	d_roles = 'roles/'  # default roles directory inside 'd_conf'
+        d_roles = 'roles/'  # default roles directory inside 'd_conf'
 
         c = {
         'd_conf': False,
@@ -289,7 +289,7 @@ def main():
 
         # - Parse version option
         if options.version:
-            print 'keepconf version', version
+            print('keepconf version', version)
             sys.exit(0)
 
         # - Get and parse configuration file
@@ -368,7 +368,7 @@ def main():
             if c['repo'] == 'local':  # local repo
                 try:
                     if os.path.isdir(os.path.join(c['d_dest'],'.git')):
-                        print 'WARNING: A .git folder exists inside '+ c['d_dest'] +' directory!'
+                        print('WARNING: A .git folder exists inside '+ c['d_dest'] +' directory!')
                         if not yes_or_not('Do you want to initialize an exiting repository?'):
                             vprint('Avoid initializating folder with .git directory')
                             sys.exit(0)
@@ -383,15 +383,15 @@ def main():
                 try:
                     if os.path.isdir(c['d_dest']):
                         if os.listdir(c['d_dest']) != []:
-                            print 'WARNING: Destination directory exists and is not empty!'
-                            print 'Please, fix '+c['d_dest']
+                            print('WARNING: Destination directory exists and is not empty!')
+                            print('Please, fix '+c['d_dest'])
                             if not yes_or_not('Do you already did it, continue?'):
                                 vprint('Avoid clonning repository into destination folder: '+c['d_dest'])
                                 sys.exit(0)
                     else:
                         vprint('Creating directory', c['d_dest'])
                         os.makedirs(c['d_dest'])
-                    print 'Clonning repository...'
+                    print('Clonning repository...')
                     sys.stdout.flush()
                     call(('git', 'clone', c['repo'], c['d_dest']))
                     sys.stdout.flush()
@@ -421,7 +421,7 @@ def main():
 
             fetch_time = time.time()
             test_repo_dir(c['d_dest'], c['commit'])
-            print '- Fetching start'
+            print('- Fetching start')
 
             # + Execute pre-get.d
             if c['pre_get']:
@@ -431,7 +431,7 @@ def main():
 
             # + Parse cfg files
             for i in srvfiles:
-                print '- Processing:', i
+                print('- Processing:', i)
 
                 p = {
                 'directory': None,
@@ -479,7 +479,7 @@ def main():
                                 p['roles_files'].extend(role_glob)
                         p['roles_files'].insert(0, sanitize(i))  # insert own file at first position
                         p['roles_files'] = p['roles_files'][::-1]  # reverse order for hieracally process
-                        print '- Roles:', ', '.join(p['roles_files'])
+                        print('- Roles:', ', '.join(p['roles_files']))
                     else:
                         raise Exception('WARNING in roles section')
                 except Exception as e:
@@ -506,8 +506,8 @@ def main():
                     else:
                         raise Exception('Empty Hosts')
                 except Exception as e:
-                    print 'WARNING Almost, one host must be defined'
-                    print 'WARNING Skipping file', i
+                    print('WARNING Almost, one host must be defined')
+                    print('WARNING Skipping file', i)
                     continue
 
                 # + Parse roles files
@@ -610,7 +610,7 @@ def main():
                             sys.exit('ERROR creating destination server directory: '+final_path+' - '+str(e))
 
                     # + Fetching content
-                    print '- Fetching:', srvname
+                    print('- Fetching:', srvname)
                     # ssh options for avoid annoying errors in rsync, if you need security, please remove from
                     # the rsync_call "'-e', ssh_rsync_opt,"
                     if options.verbose:
@@ -646,7 +646,7 @@ def main():
                 process_folder(c['post_get'], c['d_conf'], c['d_dest'])
 
             time_fetched = time.time() - fetch_time
-            print '- Fetching done'
+            print('- Fetching done')
         else:
             vprint('Avoid fetching files')
 
@@ -655,7 +655,7 @@ def main():
 
             commit_time = time.time()
             test_repo_dir(c['d_dest'], c['commit'])
-            print '- Committing start'
+            print('- Committing start')
 
             # Execute pre-commit.d
             if c['pre_commit']:
@@ -672,7 +672,7 @@ def main():
 
             # Commit into local or remote repository
             if c['repo'] == 'local':
-                print '- Committing into local repository'
+                print('- Committing into local repository')
                 try:
                     sys.stdout.flush()
                     call_out(('git', 'add', c['d_dest']+'*'), options.xilent, c['d_dest'])
@@ -683,7 +683,7 @@ def main():
             else:
                 # print '- Updating remote repository' # for avoid problems
                 # call_out(('git', 'pull'), options.xilent, cwd=c['d_dest'])
-                print '- Committing into remote repository'
+                print('- Committing into remote repository')
                 try:
                     sys.stdout.flush()
                     call_out(('git', 'add', '--all'), options.xilent, c['d_dest'])
@@ -699,7 +699,7 @@ def main():
                 process_folder(c['post_commit'], c['d_conf'], c['d_dest'])
 
             time_committed = time.time() - commit_time
-            print '- Committing done'
+            print('- Committing done')
         else:
             vprint('Avoid committing changes')
 
