@@ -26,10 +26,15 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-version = '1.2.10'
+__version__ = '1.2.10'
 
 def get_arguments(f_conf):
     """Get arguments from command line"""
+    def print_version(*_):
+        """Print version"""
+        print('keepconf version ' + __version__)
+        sys.exit(0)
+
     parser = optparse.OptionParser()
     parser.add_option('-f', '--conf',
                       dest='conffile',
@@ -74,9 +79,8 @@ def get_arguments(f_conf):
                       action='store_true',
                       help='verbose output')
     parser.add_option('-V', '--version',
-                      dest='version',
-                      default=False,
-                      action='store_true',
+                      action='callback',
+                      callback=print_version,
                       help='show version')
     options, _ = parser.parse_args()
 
@@ -87,10 +91,6 @@ def get_arguments(f_conf):
     else:
         enable_verbose = False
 
-    # - Parse version option
-    if options.version:
-        print('keepconf version', version)
-        sys.exit(0)
     return options
 
 def process_folder(str_folder, conf, dest):
