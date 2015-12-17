@@ -27,13 +27,21 @@ except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
 __version__ = '1.2.10'
+VERBOSE=0
 
 def get_arguments(f_conf):
     """Get arguments from command line"""
+
     def print_version(*_):
         """Print version"""
         print('keepconf version ' + __version__)
         sys.exit(0)
+
+    def enable_verbose(*_):
+        """Enable verbose mode"""
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+        global VERBOSE
+        VERBOSE=1
 
     parser = optparse.OptionParser()
     parser.add_option('-f', '--conf',
@@ -74,9 +82,8 @@ def get_arguments(f_conf):
                       action='store_true',
                       help='silent commit output')
     parser.add_option('-v', '--verbose',
-                      dest='verbose',
-                      default=False,
-                      action='store_true',
+                      action='callback',
+                      callback=enable_verbose,
                       help='verbose output')
     parser.add_option('-V', '--version',
                       action='callback',
@@ -84,19 +91,13 @@ def get_arguments(f_conf):
                       help='show version')
     options, _ = parser.parse_args()
 
-    # - Parse verbose option
-    global enable_verbose
-    if options.verbose:
-        enable_verbose = True
-    else:
-        enable_verbose = False
 
     return options
 
 def process_folder(str_folder, conf, dest):
     """Execute all files located in a external folder"""
     if not os.path.isdir(str_folder):
-        vprint('WARNING '+ str_folder +' not exists')
+        logging.info(str_folder +' not exists')
         return
     print('- Finding files in ' + str_folder)
     folder_files = sorted(glob.glob(str_folder + '*'))  # get files in folder
@@ -113,7 +114,7 @@ def process_folder(str_folder, conf, dest):
                 except Exception as e:
                     sys.exit('ERROR executing file: ' + str(e))
         except:
-           vprint('ERROR processing: ' + b +' '+ str(e))
+           logging.info('ERROR processing: ' + b +' '+ str(e))
     return
 
 
@@ -194,7 +195,7 @@ def sanitize(text_value):
     if resultd:
         return resultd
     else:
-        vprint('WARNING sanitize '+ text_value)
+        logging.info('sanitize '+ text_value)
         raise
 
 
@@ -223,7 +224,7 @@ def extract_walk(cfg_in_, walking=True):
         # For a comprensive behaviour than rsync do alone, add an asterisk
         # to the paths that ends in a slash or slash and asterisk
         if g.endswith('/') or g.endswith('/*'):
-            vprint('Adding * to: ' + str(g))
+            logging.info('Adding * to: ' + str(g))
             g += '*'
         walk_lst.append(g)  # add origin path after its deconstructed route
         paths_lst += walk_lst  # add processed path to the total amount
@@ -235,13 +236,6 @@ def test_repo_dir(d_dest_, commit_):
     if not os.path.isdir(d_dest_+'.git') and commit_:
         sys.exit('ERROR: '+str(d_dest_)+' not have a repository\nPlease, try to initialize it with \"keepconf -i\"')
 
-
-def vprint(*args):
-    """Print verbose information"""
-    if enable_verbose:
-        for arg in args:
-            sys.stdout.write(str(arg))
-        print('')
 
 #  Some test for avoid annoying errors
 try:
@@ -297,7 +291,7 @@ def main():
         options = get_arguments(f_conf)
 
         # - Get and parse configuration file
-        vprint('Reading configuration file:', options.conffile)
+        logging.info('Reading configuration file:'+ options.conffile)
         try:
             if not (os.path.isfile(options.conffile)):
                 raise Exception
@@ -312,10 +306,10 @@ def main():
             c['f_monitor'] = os.path.normpath(sanitize(parser.get('main','f_monitor')))
             if c['f_monitor'].lower() in ('false', '0', 'not'):
                 raise
-            vprint('f_monitor value:', c['f_monitor'])
+            logging.info('f_monitor value:', c['f_monitor'])
         except:
             c['f_monitor'] = False
-            vprint('f_monitor get value:', c['f_monitor'])
+            logging.info('f_monitor get value:'+ str(c['f_monitor']))
 
         # - Get fetch and commit
         for optn, sec, val in ((options.commitonly,'sync','fetch'), (options.commit,'vcs','commit')):
@@ -328,10 +322,10 @@ def main():
                         raise
                 else:
                     raise
-                vprint(val +' value:', c[val])
+                logging.info(val +' value:'+ c[val])
             except:
                 c[val] = optn
-                vprint(val +' get value:', c[val])
+                logging.info(val +' get value:'+ str(c[val]))
 
         # - Get repo, max_size, rsync_user and rsync_opt
         for sec, val in (('vcs','repo'), ('sync','max_size'), ('sync','rsync_user'), ('sync','rsync_opt')):
@@ -339,23 +333,23 @@ def main():
                 c[val] = sanitize(parser.get(sec, val))
                 if c[val].lower() in ('false', '0', 'not'):
                     c[val] = False
-                vprint(val +' value:', c[val])
+                logging.info(val +' value:'+ c[val])
             except:
-                vprint(val +' get value:', c[val])
+                logging.info(val +' get value:'+ c[val])
 
         # - Get pre_get, post_get, pre_commit, post_commit
         for sec, val in (('sync','pre_get'), ('sync','post_get'), ('vcs','pre_commit'), ('vcs','post_commit')):
             try:
                 c[val] = os.path.normpath(sanitize(parser.get(sec, val)))+os.sep
-                vprint(val + ' value:', c[val])
+                logging.info(val + ' value:'+ c[val])
             except Exception as e:
-                vprint(val + ' not used '+ str(c[val]) +' '+ str(e))
+                logging.info(val + ' not used '+ str(c[val]) +' '+ str(e))
 
         # - Get d_dest and d_conf
         for val in ('d_dest', 'd_conf'):
             try:
                 c[val] = os.path.normpath(sanitize(parser.get('main', val)))+os.sep
-                vprint(val + ' value:', c[val])
+                logging.info(val + ' value:'+ c[val])
                 if val == 'd_dest':
                     if (not options.gitinit and c['commit']) and not os.path.isdir(c['d_dest']):
                         sys.exit('ERROR d_conf: '+ str(c[val]) +
@@ -374,7 +368,7 @@ def main():
                     if os.path.isdir(os.path.join(c['d_dest'],'.git')):
                         print('WARNING: A .git folder exists inside '+ c['d_dest'] +' directory!')
                         if not yes_or_not('Do you want to initialize an exiting repository?'):
-                            vprint('Avoid initializating folder with .git directory')
+                            logging.info('Avoid initializating folder with .git directory')
                             sys.exit(0)
                     sys.stdout.flush()
                     call(('git', 'init', c['d_dest']))
@@ -390,10 +384,10 @@ def main():
                             print('WARNING: Destination directory exists and is not empty!')
                             print('Please, fix '+c['d_dest'])
                             if not yes_or_not('Do you already did it, continue?'):
-                                vprint('Avoid clonning repository into destination folder: '+c['d_dest'])
+                                logging.info('Avoid clonning repository into destination folder: '+c['d_dest'])
                                 sys.exit(0)
                     else:
-                        vprint('Creating directory', c['d_dest'])
+                        logging.info('Creating directory'+ c['d_dest'])
                         os.makedirs(c['d_dest'])
                     print('Clonning repository...')
                     sys.stdout.flush()
@@ -453,7 +447,7 @@ def main():
                 except Exception as e:
                     sys.exit('ERROR creating temporary file: ' + str(e))
 
-                vprint('Reading host config file:', i)
+                logging.info('Reading host config file:'+ i)
                 try:
                     parser = ConfigParser(allow_no_value=True)
                     parser.read(i)
@@ -464,7 +458,7 @@ def main():
                 try:
                     for line, _ in parser.items('roles'):
                         line = (sanitize(line))
-                        vprint('Role: ' + line)
+                        logging.info('Role: ' + line)
                         p['roles_files'].append(line)
 
                     # + Get roles file lines - Process
@@ -478,7 +472,7 @@ def main():
                             p['roles_files'].remove(t)
                             role_glob = glob.glob(t)
                             if not role_glob:
-                                vprint('WARNING, excluding invalid role file: ' + str(t)) 
+                                logging.info('WARNING, excluding invalid role file: ' + str(t)) 
                             else:
                                 p['roles_files'].extend(role_glob)
                         p['roles_files'].insert(0, sanitize(i))  # insert own file at first position
@@ -489,24 +483,24 @@ def main():
                 except Exception as e:
                     p['roles_files'] = []
                     p['roles_files'].insert(0, sanitize(i))  # insert parent cfg file at first position
-                    vprint('WARNING parsing roles section ' + str(e))
-                vprint('roles value:', p['roles_files'])
+                    logging.info('WARNING parsing roles section ' + str(e))
+                logging.info('roles value:'+ str(p['roles_files']))
 
                 # + Parse hosts section, get list of hosts
                 try:
                     for line, _ in (parser.items('hosts')):
                         p['list'].append(sanitize(line))
-                        vprint('Reading hosts:', line)
+                        logging.info('Reading hosts:'+ line)
 
                     if p['list'][0]:  # if empty host list skip the file
-                        vprint('Hosts value:', p['list'])
+                        logging.info('Hosts value:'+ str(p['list']))
                         for re_hosts in p['list']:  # parse expand option if match
                             if detect_range(re_hosts):
-                                vprint('Range detected: ', re_hosts)
+                                logging.info('Range detected: '+ str(re_hosts))
                                 p['list'] = p['list'] + expand_range(re_hosts)  # expand hostnames
                                 p['list'].remove(re_hosts)  # remove range from list
                         p['list'] = sorted(set(p['list']))  # remove duplicate names and order
-                        vprint('Lists of hosts: ', p['list'])
+                        logging.info('Lists of hosts: '+ str(p['list']))
                     else:
                         raise Exception('Empty Hosts')
                 except Exception as e:
@@ -516,9 +510,9 @@ def main():
 
                 # + Parse roles files
                 for j in p['roles_files']:
-                    vprint('- Processing:', j)
+                    logging.info('- Processing:'+ j)
                     if not os.path.isfile(j):
-                        vprint('Invalid file:', j)
+                        logging.info('Invalid file:', j)
                         continue
 
                     try:  # read cfg file
@@ -530,20 +524,20 @@ def main():
                     # + Get directory variable
                     try:
                         p['directory'] = os.path.normpath(sanitize(parser.get('main', 'directory')))+os.sep
-                        vprint('directory:', p['directory'],)
+                        logging.info('directory:'+ str(p['directory'],))
                     except:
                         if p['directory'] == None:
-                            vprint('directory empty')
+                            logging.info('directory empty')
                         else:
-                            vprint('directory heritage: ' + p['directory'])
+                            logging.info('directory heritage: ' + str(p['directory']))
 
                     # + Get rsync_user and max_size variables
                     for val in ('rsync_user','max_size'):
                         try:
                             p[val] = sanitize(parser.get('main', val))
-                            vprint(val, ': ', p[val],)
+                            logging.info(val+ ': '+ str(p[val]))
                         except:
-                            vprint(val +' herietage: ', p[val],)
+                            logging.info(val +' herietage: '+ str(p[val]))
 
                     # + Parse files section, get includes/excludes/forced paths
                     try:
@@ -552,47 +546,47 @@ def main():
                                 line_range = []
                                 line = (sanitize(line))
                                 if detect_range(line):  # detect range inside
-                                    vprint('Range detected: ', line)
+                                    logging.info('Range detected: ', line)
                                     line_range = expand_range(line)
                                 else:
                                     line_range.append(line)
                                 for lpath in line_range:  # detect each type of line
                                     if lpath.startswith('!'):
-                                        vprint('Exclude: ', lpath[1:].rstrip())
+                                        logging.info('Exclude: '+ lpath[1:].rstrip())
                                         p['cfg_ex'].append(lpath[1:])
                                     elif lpath.startswith('&'):
-                                        vprint('Force Incl: ', lpath[1:].rstrip())
+                                        logging.info('Force Incl: ', lpath[1:].rstrip())
                                         p['cfg_frz'].append(lpath[1:])
                                     else:
-                                        vprint('Include: ', lpath.rstrip())
+                                        logging.info('Include: '+ lpath.rstrip())
                                         p['cfg_in'].append(lpath)
                         else:
-                            vprint('WARNING empty file list')
+                            logging.info('WARNING empty file list')
                     except Exception as e:
-                        vprint('WARNING parsing files section in: ' + j + ' ' + str(e))
+                        logging.info('WARNING parsing files section in: ' + j + ' ' + str(e))
 
                 # + Write to include/exclude rsync file
                 for val in ('cfg_in', 'cfg_ex', 'cfg_frz'):
                     try:
                         p[val]=sorted(set(p[val]))  # clean duplicates and order
                     except Exception as e:
-                        vprint('WARNING sorting: ' + val + ' ' + str(e))
+                        logging.info('WARNING sorting: ' + val + ' ' + str(e))
 
                 if p['cfg_frz']:
                     paths_lst_frz = extract_walk(p['cfg_frz'])
-                    vprint('Force paths: '+str(p['cfg_frz'])+'->'+str(paths_lst_frz))
+                    logging.info('Force paths: '+str(p['cfg_frz'])+'->'+str(paths_lst_frz))
                     for e in paths_lst_frz:
                         f_walk.write('+ ' + e + '\n')
 
                 if p['cfg_ex']:
                     paths_lst_ex = extract_walk(p['cfg_ex'], False)
-                    vprint('Exclude paths: '+str(p['cfg_ex'])+'->'+str(paths_lst_ex))
+                    logging.info('Exclude paths: '+str(p['cfg_ex'])+'->'+str(paths_lst_ex))
                     for e in paths_lst_ex:
                         f_walk.write('- ' + e + '\n')
 
                 if p['cfg_in']:
                     paths_lst_in = extract_walk(p['cfg_in'])
-                    vprint('Include paths: '+str(p['cfg_in'])+'->'+str(paths_lst_in))
+                    logging.info('Include paths: '+str(p['cfg_in'])+'->'+str(paths_lst_in))
                     for e in paths_lst_in:
                         f_walk.write('+ ' + e + '\n')
 
@@ -608,7 +602,7 @@ def main():
 
                     if not os.path.isdir(final_path):  # if local folder not exists, do it
                         try:
-                            vprint('Making directory', final_path)
+                            logging.info('Making directory', final_path)
                             mkpath(final_path)
                         except Exception as e:
                             sys.exit('ERROR creating destination server directory: '+final_path+' - '+str(e))
@@ -617,7 +611,7 @@ def main():
                     print('- Fetching:', srvname)
                     # ssh options for avoid annoying errors in rsync, if you need security, please remove from
                     # the rsync_call "'-e', ssh_rsync_opt,"
-                    if options.verbose:
+                    if VERBOSE:
                         ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null'
                     else:
                         ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet'
@@ -625,7 +619,7 @@ def main():
                     rsync_call = ('rsync', '-e', ssh_rsync_opt, '-'+c['rsync_opt'], '--progress', '--delete-excluded', 
                     '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+p['max_size'], 
                     '--include-from=' + f_walk.name, '--prune-empty-dirs', p['rsync_user']+'@'+srvname+':/', final_path)
-                    vprint(' '.join(map(str,rsync_call)))
+                    logging.info(' '.join(map(str,rsync_call)))
                     try:
                         sys.stdout.flush()
                         if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
@@ -640,8 +634,8 @@ def main():
 
                 f_walk.close()
 
-                if options.verbose:
-                    vprint('WARNING temporary files not deleted in verbose mode')
+                if VERBOSE:
+                    logging.info('WARNING temporary files not deleted in verbose mode')
                 else:
                     os.remove(f_tmp_walk)
 
@@ -652,7 +646,7 @@ def main():
             time_fetched = time.time() - fetch_time
             print('- Fetching done')
         else:
-            vprint('Avoid fetching files')
+            logging.info('Avoid fetching files')
 
         # + Parse commit option
         if c['commit'] and c['repo']:
@@ -705,7 +699,7 @@ def main():
             time_committed = time.time() - commit_time
             print('- Committing done')
         else:
-            vprint('Avoid committing changes')
+            logging.info('Avoid committing changes')
 
         # + Print stats
         if c['fetch'] or (c['commit'] and c['repo']):
@@ -725,7 +719,7 @@ def main():
         # + Write csv report file
         if c['f_monitor']:
 
-            vprint('Writing stats to monitor file ', c['f_monitor'])
+            logging.info('Writing stats to monitor file ', c['f_monitor'])
             try:
                 with open(c['f_monitor'], "w"):  # clean monitor file
                     pass
