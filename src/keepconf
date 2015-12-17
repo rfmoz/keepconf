@@ -26,7 +26,7 @@ try:
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
-__version__ = '1.2.10'
+__version__ = '1.3.00-dev'
 __fconf__ = '/etc/keepconf/keepconf.cfg'  # default configuration file
 VERBOSE=0
 
@@ -91,7 +91,6 @@ def get_arguments():
                       callback=print_version,
                       help='show version')
     options, _ = parser.parse_args()
-
 
     return options
 
@@ -191,7 +190,6 @@ def expand_range(line=None):
 
 def sanitize(text_value):
     """Remove especial characters"""
-    #excluded = "[\',\",\;,\,,\|,\<,\>]"  # excluded characters
     excluded = "[\'\"\;\|\<\>]"  # excluded characters
     resultd = re.sub(excluded, '', ((text_value.split('#', 1)[0].split(';', 1)[0]).strip()))
     if resultd:
@@ -290,22 +288,6 @@ except:
 
 
 def main():
-        # Inside this function:
-        # - Read command line options
-        # - Parse verbose option
-        # - Parse version option
-        # - Get and parse configuration file
-        # - Get f_monitor
-        # - Get fetch and commit
-        # - Get repo, max_size, rsync_user and rsync_opt
-        # - Get pre_get, post_get, pre_commit, post_commit
-        # - Get d_dest and d_conf
-        # - Parse init option
-        # - Parse fetch (no commit) option
-        # - Parse commit option
-        # - Print stats
-        # - Write csv report file
-
         start_time = time.time()
 
         hosts_ok, hosts_bad = [], []
@@ -379,6 +361,9 @@ def main():
         c['pre_commit'] = assign_variable(c, 'vcs', 'pre_commit', normpath=True)
         c['post_commit'] = assign_variable(c, 'vcs', 'post_commit', normpath=True)
         c['repo'] = assign_variable(c, 'vcs', 'repo')
+        c['cfg_ex'] = []
+        c['cfg_frz'] = []
+        c['cfg_in'] = []
 
         # Check variable requirements
         if (not options.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
@@ -392,21 +377,6 @@ def main():
 
         # - Parse fetch (no commit) option
         if c['fetch']:
-            # Inside this if:
-            # + Execute pre-get.d
-            # + Parse cfg files
-            # + Parse roles section
-            # + Get roles file lines
-            # + Parse hosts section, get list of hosts
-            # + Parse roles files
-            # + Get directory variable
-            # + Get rsync_user and max_size variables
-            # + Parse files section, get includes/excludes/forced paths
-            # + Write to include/exclude rsync file
-            # + Create destination directories
-            # + Fetching content
-            # + Execute post-get.d
-
             fetch_time = time.time()
             test_repo_dir(c['d_dest'], c['commit'])
             print('- Fetching start')
@@ -415,264 +385,109 @@ def main():
             if c['pre_get']:
                 process_folder(c['pre_get'], c['d_conf'], c['d_dest'])
 
-            # + Get list of hosts
-            if c['list_hosts']:
-                for file_host in c['list_hosts'].replace(" ", "").split(',', 1):
-                    logging.info('Reading host file: '+ file_host)
-                    with open(file_host) as f:
-                        for line in f:
-                            try:
-                                lne = sanitize(line)
-                                if detect_range(lne):
-                                    logging.info('Range detected: '+ lne)
-                                    c['hosts'] = c['hosts'] + expand_range(lne)
-                                else:
-                                    c['hosts'].append(lne)
-                            except:
-                                continue
-                    c['hosts'] = sorted(set(c['hosts']))  # remove duplicate names and order
-            else:
-                logging.info('Empty "list_hosts"')
-            logging.info('Hosts list: ' + str(c['hosts']))
-
-
-            # + Get list of files
-            if c['list_files']:
-                for file_host in c['list_files'].replace(" ", "").split(',', 1):
-                    logging.info('Reading files file: '+ file_host)
-                    with open(file_host) as f:
-                        for line in f:
-                            try:
-                                lne = sanitize(line)
-                                if detect_range(lne):
-                                    logging.info('Range detected: '+ lne)
-                                    c['files'] = c['files'] + expand_range(lne)
-                                else:
-                                    c['files'].append(lne)
-                            except:
-                                continue
-                    c['files'] = sorted(set(c['files']))  # remove duplicate names and order
-            else:
-                logging.info('Empty "list_files"')
-            logging.info('Files list: ' + str(c['files']))
-
-
-            srvfiles = sorted(glob.glob(os.path.join(c['d_conf'],'*.cfg')))  # get files in d_conf dir
-
-            # + Parse cfg files
-            for i in srvfiles:
-                print('- Processing:', i)
-
-                p = {
-                'directory': None,
-                'max_size': c['max_size'],
-                'rsync_user': c['rsync_user'],
-                'roles_files': [],
-                'host_list': [],
-                'cfg_in': [],
-                'cfg_ex': [],
-                'cfg_frz': []}
-
-                try:   # temporary file for include/exclude to rsync
-                    _, f_tmp_walk = tempfile.mkstemp()
-                    f_walk = open(f_tmp_walk, 'w')
-                except:
-                    sys.exit('ERROR creating temporary file')
-
-                logging.info('Reading host config file:'+ i)
-                try:
-                    parser = ConfigParser(allow_no_value=True)
-                    parser.read(i)
-                except:
-                    sys.exit('ERROR reading host config file: '+ str(i))
-
-                # + Parse roles section
-                try:
-                    for line, _ in parser.items('roles'):
-                        line = (sanitize(line))
-                        logging.info('Role: ' + line)
-                        p['roles_files'].append(line)
-
-                    # + Get roles file lines - Process
-                    if p['roles_files'][0]:
-                        def get_roles_files(p):
-                            for s in p['roles_files'][:]:  # go over each role
-                                p['roles_files'].remove(s)  # remove before process
-                                s = sanitize(s)
-                                p['roles_files'].append(os.path.join(c['d_conf'] + d_roles, s))
-
-                            for t in p['roles_files'][:]:  # parse paths for checking the name integrity
-                                p['roles_files'].remove(t)
-                                role_glob = glob.glob(t)
-                                if not role_glob:
-                                    logging.info('WARNING, excluding invalid role file: ' + str(t)) 
-                                else:
-                                    p['roles_files'].extend(role_glob)
-                            p['roles_files'].insert(0, sanitize(i))  # insert own file at first position
-                            p['roles_files'] = p['roles_files'][::-1]  # reverse order for hieracally process
-
-                        p['roles_files'] = get_roles_files(p)
-                        print('- Roles:', ', '.join(p['roles_files']))
-                    else:
-                        raise Exception('WARNING in roles section')
-                except Exception as e:
-                    p['roles_files'] = []
-                    p['roles_files'].insert(0, sanitize(i))  # insert parent cfg file at first position
-                    logging.info('WARNING parsing roles section ' + str(e))
-                logging.info('roles value:'+ str(p['roles_files']))
-
-                # + Parse hosts section, get list of hosts
-                try:
-                    for line, _ in (parser.items('hosts')):
-                        p['host_list'].append(sanitize(line))
-                        logging.info('Reading hosts:'+ line)
-
-                    if p['host_list'][0]:  # if empty host list skip the file
-                        logging.info('Hosts value:'+ str(p['host_list']))
-                        for re_hosts in p['host_list']:  # parse expand option if match
-                            if detect_range(re_hosts):
-                                logging.info('Range detected: '+ str(re_hosts))
-                                p['host_list'] = p['host_list'] + expand_range(re_hosts)  # expand hostnames
-                                p['host_list'].remove(re_hosts)  # remove range from list
-                        p['host_list'] = sorted(set(p['host_list']))  # remove duplicate names and order
-                        logging.info('Lists of hosts: '+ str(p['host_list']))
-                    else:
-                        raise Exception('Empty Hosts')
-                except Exception as e:
-                    print('WARNING Almost, one host must be defined')
-                    print('WARNING Skipping file', i)
-                    continue
-
-                # + Parse roles files
-                for j in p['roles_files']:
-                    logging.info('- Processing:'+ j)
-                    if not os.path.isfile(j):
-                        logging.info('Invalid file:', j)
-                        continue
-
-                    try:  # read cfg file
-                        parser = ConfigParser(allow_no_value=True)
-                        parser.read(j)
-                    except Exception as e:
-                        sys.exit('ERROR reading cfg file: '+j+' '+ str(e))
-
-                    # + Get directory variable
-                    try:
-                        p['directory'] = os.path.normpath(sanitize(parser.get('main', 'directory')))+os.sep
-                        logging.info('directory:'+ str(p['directory'],))
-                    except:
-                        if p['directory'] == None:
-                            logging.info('directory empty')
-                        else:
-                            logging.info('directory heritage: ' + str(p['directory']))
-
-                    # + Get rsync_user and max_size variables
-                    for val in ('rsync_user','max_size'):
-                        try:
-                            p[val] = sanitize(parser.get('main', val))
-                            logging.info(val+ ': '+ str(p[val]))
-                        except:
-                            logging.info(val +' herietage: '+ str(p[val]))
-
-                    # + Parse files section, get includes/excludes/forced paths
-                    try:
-                        if parser.items('files') != []:
-                            for line, _ in parser.items('files'):
-                                line_range = []
-                                line = (sanitize(line))
-                                if detect_range(line):  # detect range inside
-                                    logging.info('Range detected: ', line)
-                                    line_range = expand_range(line)
-                                else:
-                                    line_range.append(line)
-                                for lpath in line_range:  # detect each type of line
-                                    if lpath.startswith('!'):
-                                        logging.info('Exclude: '+ lpath[1:].rstrip())
-                                        p['cfg_ex'].append(lpath[1:])
-                                    elif lpath.startswith('&'):
-                                        logging.info('Force Incl: ', lpath[1:].rstrip())
-                                        p['cfg_frz'].append(lpath[1:])
+            # + Get list of hosts and files
+            for key1, key2 in (('list_hosts','hosts'), ('list_files','files')):
+                if c[key1]:
+                    for file_host in c[key1].replace(" ", "").split(',', 1):
+                        logging.info('Reading '+ key2 +' file: '+ file_host)
+                        with open(file_host) as f:
+                            for line in f:
+                                try:
+                                    lne = sanitize(line)
+                                    if detect_range(lne):
+                                        logging.info('Range detected: '+ lne)
+                                        c[key2] = c[key2] + expand_range(lne)
                                     else:
-                                        logging.info('Include: '+ lpath.rstrip())
-                                        p['cfg_in'].append(lpath)
-                        else:
-                            logging.info('WARNING empty file list')
-                    except Exception as e:
-                        logging.info('WARNING parsing files section in: ' + j + ' ' + str(e))
-
-                # + Write to include/exclude rsync file
-                for val in ('cfg_in', 'cfg_ex', 'cfg_frz'):
-                    try:
-                        p[val]=sorted(set(p[val]))  # clean duplicates and order
-                    except Exception as e:
-                        logging.info('WARNING sorting: ' + val + ' ' + str(e))
-
-                if p['cfg_frz']:
-                    paths_lst_frz = extract_walk(p['cfg_frz'])
-                    logging.info('Force paths: '+str(p['cfg_frz'])+'->'+str(paths_lst_frz))
-                    for e in paths_lst_frz:
-                        f_walk.write('+ ' + e + '\n')
-
-                if p['cfg_ex']:
-                    paths_lst_ex = extract_walk(p['cfg_ex'], False)
-                    logging.info('Exclude paths: '+str(p['cfg_ex'])+'->'+str(paths_lst_ex))
-                    for e in paths_lst_ex:
-                        f_walk.write('- ' + e + '\n')
-
-                if p['cfg_in']:
-                    paths_lst_in = extract_walk(p['cfg_in'])
-                    logging.info('Include paths: '+str(p['cfg_in'])+'->'+str(paths_lst_in))
-                    for e in paths_lst_in:
-                        f_walk.write('+ ' + e + '\n')
-
-                f_walk.write('- *\n')  # this line must be always in the file
-                f_walk.seek(0)
-
-                # + Create destination directories
-                for srvname in p['host_list']:
-                    try:
-                        final_path = os.path.join(c['d_dest'], p['directory'], srvname)
-                    except:
-                        final_path = os.path.join(c['d_dest'], srvname)
-
-                    if not os.path.isdir(final_path):  # if local folder not exists, do it
-                        try:
-                            logging.info('Making directory', final_path)
-                            mkpath(final_path)
-                        except Exception as e:
-                            sys.exit('ERROR creating destination server directory: '+final_path+' - '+str(e))
-
-                    # + Fetching content
-                    print('- Fetching:', srvname)
-                    # ssh options for avoid annoying errors in rsync, if you need security, please remove from
-                    # the rsync_call "'-e', ssh_rsync_opt,"
-                    if VERBOSE:
-                        ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null'
-                    else:
-                        ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet'
-                    # syncing files, for modify rsync call, the place is the following line:
-                    rsync_call = ('rsync', '-e', ssh_rsync_opt, '-'+c['rsync_opt'], '--progress', '--delete-excluded', 
-                    '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+p['max_size'], 
-                    '--include-from=' + f_walk.name, '--prune-empty-dirs', p['rsync_user']+'@'+srvname+':/', final_path)
-                    logging.info(' '.join(map(str,rsync_call)))
-                    try:
-                        sys.stdout.flush()
-                        if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
-                            hosts_ok.append(srvname)
-                        else:
-                            hosts_bad.append(srvname)
-                        sys.stdout.flush()
-
-                    except Exception as e:
-                        sys.stdout.flush()
-                        sys.exit('ERROR executing rsync command: ' + str(e))
-
-                f_walk.close()
-
-                if VERBOSE:
-                    logging.info('WARNING temporary files not deleted in verbose mode')
+                                        c[key2].append(lne)
+                                except:
+                                    continue
+                        c[key2] = sorted(set(c[key2]))  # remove duplicate names and order
                 else:
-                    os.remove(f_tmp_walk)
+                    logging.info('Empty "'+ key1 +'"')
+                logging.info(key1 +' list: ' + str(c[key2]))
+
+            # + Construct files
+            for fpath in c['files']:  # detect each type of line
+                if fpath.startswith('!'):
+                    logging.info('Exclude: '+ fpath[1:].rstrip())
+                    c['cfg_ex'].append(lpath[1:])
+                elif fpath.startswith('&'):
+                    logging.info('Force Incl: ', fpath[1:].rstrip())
+                    c['cfg_frz'].append(fpath[1:])
+                else:
+                    logging.info('Include: '+ fpath.rstrip())
+                    c['cfg_in'].append(fpath)
+
+            # + Write to include/exclude rsync file
+            for val in ('cfg_in', 'cfg_ex', 'cfg_frz'):
+                c[val]=sorted(set(c[val]))  # clean duplicates and order
+
+            try:   # temporary file for include/exclude to rsync
+                _, f_tmp_walk = tempfile.mkstemp()
+                f_walk = open(f_tmp_walk, 'w')
+            except:
+                sys.exit('ERROR creating temporary file')
+
+            if c['cfg_frz']:
+                paths_lst_frz = extract_walk(c['cfg_frz'])
+                logging.info('Force paths: '+str(c['cfg_frz'])+'->'+str(paths_lst_frz))
+                for e in paths_lst_frz:
+                    f_walk.write('+ ' + e + '\n')
+
+            if c['cfg_ex']:
+                paths_lst_ex = extract_walk(c['cfg_ex'], False)
+                logging.info('Exclude paths: '+str(c['cfg_ex'])+'->'+str(paths_lst_ex))
+                for e in paths_lst_ex:
+                    f_walk.write('- ' + e + '\n')
+
+            if c['cfg_in']:
+                paths_lst_in = extract_walk(c['cfg_in'])
+                logging.info('Include paths: '+str(c['cfg_in'])+'->'+str(paths_lst_in))
+                for e in paths_lst_in:
+                    f_walk.write('+ ' + e + '\n')
+
+            f_walk.write('- *\n')  # this line must be always in the file
+            f_walk.seek(0)
+
+
+            for host in c['hosts']:
+                final_path = os.path.join(c['d_dest'], host)
+                if not os.path.isdir(final_path):  # if local folder not exists, do it
+                    logging.info('Making destination folder: ' + final_path)
+                    mkpath(final_path)
+                else:
+                    logging.info('Destination folder exists: ' + final_path)
+ 
+                # + Fetching content
+                print('- Fetching:', host)
+                # ssh options for avoid annoying errors in rsync, if you need security, please remove from
+                # the rsync_call "'-e', ssh_rsync_opt,"
+                if VERBOSE:
+                    ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null'
+                else:
+                    ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet'
+                # syncing files, for modify rsync call, the place is the following line:
+                rsync_call = ('rsync', '-e', ssh_rsync_opt, '-'+c['rsync_opt'], '--progress', '--delete-excluded',
+                '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+c['max_size'],
+                '--include-from=' + f_walk.name, '--prune-empty-dirs', c['rsync_user']+'@'+host+':/', final_path)
+                logging.info(' '.join(map(str,rsync_call)))
+                try:
+                    sys.stdout.flush()
+                    if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
+                        hosts_ok.append(host)
+                    else:
+                        hosts_bad.append(host)
+                    sys.stdout.flush()
+
+                except Exception as e:
+                    sys.stdout.flush()
+                    sys.exit('ERROR executing rsync command: ' + str(e))
+
+            f_walk.close()
+            if VERBOSE:
+                logging.info('WARNING temporary files not deleted in verbose mode')
+            else:
+                os.remove(f_tmp_walk)
 
             # + Execute post-get.d
             if c['post_get']:
