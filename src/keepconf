@@ -238,6 +238,44 @@ def test_repo_dir(d_dest_, commit_):
         sys.exit('ERROR: '+str(d_dest_)+' not have a repository\nPlease, try to initialize it with \"keepconf -i\"')
 
 
+def git_init(c):
+    if c['repo'] == 'local':  # local repo
+        try:
+            if os.path.isdir(os.path.join(c['d_dest'],'.git')):
+                print('WARNING: A .git folder exists inside '+ c['d_dest'] +' directory!')
+                if not yes_or_not('Do you want to initialize an exiting repository?'):
+                    logging.info('Avoid initializating folder with .git directory')
+                    sys.exit(0)
+            sys.stdout.flush()
+            call(('git', 'init', c['d_dest']))
+            sys.stdout.flush()
+        except Exception as e:
+            sys.stdout.flush()
+            sys.exit('ERROR local repository not initializated: '+ str(e))
+
+    elif c['repo']:  # remote repo
+        try:
+            if os.path.isdir(c['d_dest']):
+                if os.listdir(c['d_dest']) != []:
+                    print('WARNING: Destination directory exists and is not empty!')
+                    print('Please, fix '+c['d_dest'])
+                    if not yes_or_not('Do you already did it, continue?'):
+                        logging.info('Avoid clonning repository into destination folder: '+c['d_dest'])
+                        sys.exit(0)
+            else:
+                logging.info('Creating directory'+ c['d_dest'])
+                os.makedirs(c['d_dest'])
+            print('Clonning repository...')
+            sys.stdout.flush()
+            call(('git', 'clone', c['repo'], c['d_dest']))
+            sys.stdout.flush()
+        except Exception as e:
+            sys.stdout.flush()
+            sys.exit('ERROR clonning remote repository: '+ str(e))
+    else:
+        sys.exit('ERROR initializating repository: ' + str(c['repo']))
+    sys.exit(0)
+
 #  Some test for avoid annoying errors
 try:
     call_out('rsync', True)
@@ -317,7 +355,7 @@ def main():
         # - Get key values
         c['d_conf'] = assign_variable(c, 'main', 'd_conf')
         c['d_dest'] = assign_variable(c, 'main', 'd_dest')
-        c['f_monitor'] = assign_variable(c, 'main', 'f_monitor', normpath=True)
+        c['f_monitor'] = assign_variable(c, 'main', 'f_monitor')
         if options.commitonly:
             c['fetch'] = assign_variable(c, 'sync', 'fetch')
         else:
@@ -335,7 +373,7 @@ def main():
         c['post_commit'] = assign_variable(c, 'vcs', 'post_commit', normpath=True)
         c['repo'] = assign_variable(c, 'vcs', 'repo')
 
-        # Some checks
+        # Check variable requirements
         if (not options.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
             sys.exit('ERROR: '+ str(c['d_dest']) +' is not a valid \"d_conf\" directory or is not initialized.\nPlease, try to execute \"keepconf -i\"')
         if not os.path.isdir(str(c['d_conf'])):
@@ -343,43 +381,7 @@ def main():
 
         # - Parse init option
         if options.gitinit:
-
-            if c['repo'] == 'local':  # local repo
-                try:
-                    if os.path.isdir(os.path.join(c['d_dest'],'.git')):
-                        print('WARNING: A .git folder exists inside '+ c['d_dest'] +' directory!')
-                        if not yes_or_not('Do you want to initialize an exiting repository?'):
-                            logging.info('Avoid initializating folder with .git directory')
-                            sys.exit(0)
-                    sys.stdout.flush()
-                    call(('git', 'init', c['d_dest']))
-                    sys.stdout.flush()
-                except Exception as e:
-                    sys.stdout.flush()
-                    sys.exit('ERROR local repository not initializated: '+ str(e))
-
-            elif c['repo']:  # remote repo
-                try:
-                    if os.path.isdir(c['d_dest']):
-                        if os.listdir(c['d_dest']) != []:
-                            print('WARNING: Destination directory exists and is not empty!')
-                            print('Please, fix '+c['d_dest'])
-                            if not yes_or_not('Do you already did it, continue?'):
-                                logging.info('Avoid clonning repository into destination folder: '+c['d_dest'])
-                                sys.exit(0)
-                    else:
-                        logging.info('Creating directory'+ c['d_dest'])
-                        os.makedirs(c['d_dest'])
-                    print('Clonning repository...')
-                    sys.stdout.flush()
-                    call(('git', 'clone', c['repo'], c['d_dest']))
-                    sys.stdout.flush()
-                except Exception as e:
-                    sys.stdout.flush()
-                    sys.exit('ERROR clonning remote repository: '+ str(e))
-            else:
-                sys.exit('ERROR initializating repository: ' + str(c['repo']))
-            sys.exit(0)
+            git_init(c)
 
         # - Parse fetch (no commit) option
         if c['fetch']:
@@ -400,13 +402,13 @@ def main():
 
             fetch_time = time.time()
             test_repo_dir(c['d_dest'], c['commit'])
-            print('- Fetching start' + str(c['fetch']))
+            print('- Fetching start')
 
             # + Execute pre-get.d
             if c['pre_get']:
                 process_folder(c['pre_get'], c['d_conf'], c['d_dest'])
 
-            srvfiles = sorted(glob.glob(os.path.join(c['d_conf'],'*.cfg')))  # get files in d_conf dir folder
+            srvfiles = sorted(glob.glob(os.path.join(c['d_conf'],'*.cfg')))  # get files in d_conf dir
 
             # + Parse cfg files
             for i in srvfiles:
@@ -417,7 +419,7 @@ def main():
                 'max_size': c['max_size'],
                 'rsync_user': c['rsync_user'],
                 'roles_files': [],
-                'list': [],
+                'host_list': [],
                 'cfg_in': [],
                 'cfg_ex': [],
                 'cfg_frz': []}
@@ -425,15 +427,15 @@ def main():
                 try:   # temporary file for include/exclude to rsync
                     _, f_tmp_walk = tempfile.mkstemp()
                     f_walk = open(f_tmp_walk, 'w')
-                except Exception as e:
-                    sys.exit('ERROR creating temporary file: ' + str(e))
+                except:
+                    sys.exit('ERROR creating temporary file')
 
                 logging.info('Reading host config file:'+ i)
                 try:
                     parser = ConfigParser(allow_no_value=True)
                     parser.read(i)
-                except Exception as e:
-                    sys.exit('ERROR reading host config file: '+ str(e))
+                except:
+                    sys.exit('ERROR reading host config file: '+ str(i))
 
                 # + Parse roles section
                 try:
@@ -444,20 +446,23 @@ def main():
 
                     # + Get roles file lines - Process
                     if p['roles_files'][0]:
-                        for s in p['roles_files'][:]:  # go over each role
-                            p['roles_files'].remove(s)  # remove before process
-                            s = sanitize(s)
-                            p['roles_files'].append(os.path.join(c['d_conf'] + d_roles, s))
+                        def get_roles_files(p):
+                            for s in p['roles_files'][:]:  # go over each role
+                                p['roles_files'].remove(s)  # remove before process
+                                s = sanitize(s)
+                                p['roles_files'].append(os.path.join(c['d_conf'] + d_roles, s))
 
-                        for t in p['roles_files'][:]:  # parse paths for checking the name integrity
-                            p['roles_files'].remove(t)
-                            role_glob = glob.glob(t)
-                            if not role_glob:
-                                logging.info('WARNING, excluding invalid role file: ' + str(t)) 
-                            else:
-                                p['roles_files'].extend(role_glob)
-                        p['roles_files'].insert(0, sanitize(i))  # insert own file at first position
-                        p['roles_files'] = p['roles_files'][::-1]  # reverse order for hieracally process
+                            for t in p['roles_files'][:]:  # parse paths for checking the name integrity
+                                p['roles_files'].remove(t)
+                                role_glob = glob.glob(t)
+                                if not role_glob:
+                                    logging.info('WARNING, excluding invalid role file: ' + str(t)) 
+                                else:
+                                    p['roles_files'].extend(role_glob)
+                            p['roles_files'].insert(0, sanitize(i))  # insert own file at first position
+                            p['roles_files'] = p['roles_files'][::-1]  # reverse order for hieracally process
+
+                        p['roles_files'] = get_roles_files(p)
                         print('- Roles:', ', '.join(p['roles_files']))
                     else:
                         raise Exception('WARNING in roles section')
@@ -470,18 +475,18 @@ def main():
                 # + Parse hosts section, get list of hosts
                 try:
                     for line, _ in (parser.items('hosts')):
-                        p['list'].append(sanitize(line))
+                        p['host_list'].append(sanitize(line))
                         logging.info('Reading hosts:'+ line)
 
-                    if p['list'][0]:  # if empty host list skip the file
-                        logging.info('Hosts value:'+ str(p['list']))
-                        for re_hosts in p['list']:  # parse expand option if match
+                    if p['host_list'][0]:  # if empty host list skip the file
+                        logging.info('Hosts value:'+ str(p['host_list']))
+                        for re_hosts in p['host_list']:  # parse expand option if match
                             if detect_range(re_hosts):
                                 logging.info('Range detected: '+ str(re_hosts))
-                                p['list'] = p['list'] + expand_range(re_hosts)  # expand hostnames
-                                p['list'].remove(re_hosts)  # remove range from list
-                        p['list'] = sorted(set(p['list']))  # remove duplicate names and order
-                        logging.info('Lists of hosts: '+ str(p['list']))
+                                p['host_list'] = p['host_list'] + expand_range(re_hosts)  # expand hostnames
+                                p['host_list'].remove(re_hosts)  # remove range from list
+                        p['host_list'] = sorted(set(p['host_list']))  # remove duplicate names and order
+                        logging.info('Lists of hosts: '+ str(p['host_list']))
                     else:
                         raise Exception('Empty Hosts')
                 except Exception as e:
@@ -575,7 +580,7 @@ def main():
                 f_walk.seek(0)
 
                 # + Create destination directories
-                for srvname in p['list']:
+                for srvname in p['host_list']:
                     try:
                         final_path = os.path.join(c['d_dest'], p['directory'], srvname)
                     except:
@@ -700,7 +705,7 @@ def main():
         # + Write csv report file
         if c['f_monitor']:
 
-            logging.info('Writing stats to monitor file ', c['f_monitor'])
+            logging.info('Writing stats to monitor file '+ str(c['f_monitor']))
             try:
                 with open(c['f_monitor'], "w"):  # clean monitor file
                     pass
