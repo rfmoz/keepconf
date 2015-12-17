@@ -315,8 +315,8 @@ def main():
         'd_conf': False,
         'd_dest': False,
         'f_monitor': False,
-        'list_hosts': True,
-        'list_files': True,
+        'list_hosts': False,
+        'list_files': False,
         'fetch': True,
         'pre_get': False,
         'post_get': False,
@@ -415,40 +415,46 @@ def main():
             if c['pre_get']:
                 process_folder(c['pre_get'], c['d_conf'], c['d_dest'])
 
-            # + Get host file
-            for file_host in c['list_hosts'].replace(" ", "").split(',', 1):
-                logging.info('Reading host file: '+ file_host)
-                with open(file_host) as f:
-                    for line in f:
-                        try:
-                            c['hosts'].append(sanitize(line))
-                            logging.info('Host name: '+ c['hosts'][-1])
-                        except:
-                            continue
+            # + Get list of hosts
+            if c['list_hosts']:
+                for file_host in c['list_hosts'].replace(" ", "").split(',', 1):
+                    logging.info('Reading host file: '+ file_host)
+                    with open(file_host) as f:
+                        for line in f:
+                            try:
+                                lne = sanitize(line)
+                                if detect_range(lne):
+                                    logging.info('Range detected: '+ lne)
+                                    c['hosts'] = c['hosts'] + expand_range(lne)
+                                else:
+                                    c['hosts'].append(lne)
+                            except:
+                                continue
+                    c['hosts'] = sorted(set(c['hosts']))  # remove duplicate names and order
+            else:
+                logging.info('Empty "list_hosts"')
             logging.info('Hosts list: ' + str(c['hosts']))
 
-            '''
-                # + Parse hosts section, get list of hosts
-                try:
-                    for line, _ in (parser.items('hosts')):
-                        p['host_list'].append(sanitize(line))
-                        logging.info('Reading hosts:'+ line)
 
-                    if p['host_list'][0]:  # if empty host list skip the file
-                        logging.info('Hosts value:'+ str(p['host_list']))
-                        for re_hosts in p['host_list']:  # parse expand option if match
-                            if detect_range(re_hosts):
-                                logging.info('Range detected: '+ str(re_hosts))
-                                p['host_list'] = p['host_list'] + expand_range(re_hosts)  # expand hostnames
-                                p['host_list'].remove(re_hosts)  # remove range from list
-                        p['host_list'] = sorted(set(p['host_list']))  # remove duplicate names and order
-                        logging.info('Lists of hosts: '+ str(p['host_list']))
-                    else:
-                        raise Exception('Empty Hosts')
-                except Exception as e:
-                    print('WARNING Almost, one host must be defined')
-                    print('WARNING Skipping file', i)
-                    continue '''
+            # + Get list of files
+            if c['list_files']:
+                for file_host in c['list_files'].replace(" ", "").split(',', 1):
+                    logging.info('Reading files file: '+ file_host)
+                    with open(file_host) as f:
+                        for line in f:
+                            try:
+                                lne = sanitize(line)
+                                if detect_range(lne):
+                                    logging.info('Range detected: '+ lne)
+                                    c['files'] = c['files'] + expand_range(lne)
+                                else:
+                                    c['files'].append(lne)
+                            except:
+                                continue
+                    c['files'] = sorted(set(c['files']))  # remove duplicate names and order
+            else:
+                logging.info('Empty "list_files"')
+            logging.info('Files list: ' + str(c['files']))
 
 
             srvfiles = sorted(glob.glob(os.path.join(c['d_conf'],'*.cfg')))  # get files in d_conf dir
