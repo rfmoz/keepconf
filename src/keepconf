@@ -27,9 +27,10 @@ except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
 __version__ = '1.2.10'
+__fconf__ = '/etc/keepconf/keepconf.cfg'  # default configuration file
 VERBOSE=0
 
-def get_arguments(f_conf):
+def get_arguments():
     """Get arguments from command line"""
 
     def print_version(*_):
@@ -46,7 +47,7 @@ def get_arguments(f_conf):
     parser = optparse.OptionParser()
     parser.add_option('-f', '--conf',
                       dest='conffile',
-                      default=f_conf,
+                      default=__fconf__,
                       action='store',
                       help='configuration file',
                       metavar="FILE")
@@ -268,97 +269,77 @@ def main():
 
         start_time = time.time()
 
-        f_conf = '/etc/keepconf/keepconf.cfg'  # default configuration file
         hosts_ok, hosts_bad = [], []
         d_roles = 'roles/'  # default roles directory inside 'd_conf'
 
         c = {
         'd_conf': False,
         'd_dest': False,
-        'f_monitor': None,
-        'fetch': None,
+        'f_monitor': False,
+        'fetch': True,
         'pre_get': False,
         'post_get': False,
         'max_size': '25M',
         'rsync_user': 'backup',
         'rsync_timeout': '5',
         'rsync_opt': 'arHvzL',
-        'commit': None,
+        'commit': True,
         'pre_commit': False,
         'post_commit': False,
         'repo': 'local'}
 
-        options = get_arguments(f_conf)
+        options = get_arguments()
 
         # - Get and parse configuration file
-        logging.info('Reading configuration file:'+ options.conffile)
+        logging.info('Reading configuration file: '+ options.conffile)
         try:
             if not (os.path.isfile(options.conffile)):
-                raise Exception
+                raise ValueError('Invalid configuration file')
             else:
                 parser = ConfigParser()
                 parser.read(options.conffile)
-        except Exception as e:
+        except ValueError as e:
             sys.exit('ERROR reading configuration file: '+ str(options.conffile) +' '+  str(e))
 
-        # - Get f_monitor
-        try:
-            c['f_monitor'] = os.path.normpath(sanitize(parser.get('main','f_monitor')))
-            if c['f_monitor'].lower() in ('false', '0', 'not'):
-                raise
-            logging.info('f_monitor value:', c['f_monitor'])
-        except:
-            c['f_monitor'] = False
-            logging.info('f_monitor get value:'+ str(c['f_monitor']))
-
-        # - Get fetch and commit
-        for optn, sec, val in ((options.commitonly,'sync','fetch'), (options.commit,'vcs','commit')):
-            try:  # commit variable must be processed before d_dest
-                if optn:
-                    c[val] = sanitize(parser.get(sec, val))
-                    if c[val].lower() in ('false', '0', 'not'):
-                        c[val] = False
-                    else:
-                        raise
+        def assign_variable(c, section, key, normpath=False):
+            try:
+                if normpath:
+                    value = os.path.normpath(sanitize(parser.get(section, key)))+os.sep
                 else:
-                    raise
-                logging.info(val +' value:'+ c[val])
+                    value = sanitize(parser.get(section, key))
+                if value.lower() in ('false', '0', 'not'):
+                    value = False
             except:
-                c[val] = optn
-                logging.info(val +' get value:'+ str(c[val]))
+                value = c[key]
+            logging.info('['+section +'] '+ key +': '+ str(value))
+            return value
 
-        # - Get repo, max_size, rsync_user and rsync_opt
-        for sec, val in (('vcs','repo'), ('sync','max_size'), ('sync','rsync_user'), ('sync','rsync_opt')):
-            try:
-                c[val] = sanitize(parser.get(sec, val))
-                if c[val].lower() in ('false', '0', 'not'):
-                    c[val] = False
-                logging.info(val +' value:'+ c[val])
-            except:
-                logging.info(val +' get value:'+ c[val])
+        # - Get key values
+        c['d_conf'] = assign_variable(c, 'main', 'd_conf')
+        c['d_dest'] = assign_variable(c, 'main', 'd_dest')
+        c['f_monitor'] = assign_variable(c, 'main', 'f_monitor', normpath=True)
+        if options.commitonly:
+            c['fetch'] = assign_variable(c, 'sync', 'fetch')
+        else:
+            c['fetch'] = False
+        c['pre_get'] = assign_variable(c, 'sync', 'pre_get', normpath=True)
+        c['post_get'] = assign_variable(c, 'sync', 'post_get', normpath=True)
+        c['max_size'] = assign_variable(c, 'sync', 'max_size')
+        c['rsync_user'] = assign_variable(c, 'sync', 'rsync_user')
+        c['rsync_opt'] = assign_variable(c, 'sync', 'rsync_opt')
+        if options.commit:
+            c['commit'] = assign_variable(c, 'vcs', 'commit')
+        else:
+            c['commit'] = False
+        c['pre_commit'] = assign_variable(c, 'vcs', 'pre_commit', normpath=True)
+        c['post_commit'] = assign_variable(c, 'vcs', 'post_commit', normpath=True)
+        c['repo'] = assign_variable(c, 'vcs', 'repo')
 
-        # - Get pre_get, post_get, pre_commit, post_commit
-        for sec, val in (('sync','pre_get'), ('sync','post_get'), ('vcs','pre_commit'), ('vcs','post_commit')):
-            try:
-                c[val] = os.path.normpath(sanitize(parser.get(sec, val)))+os.sep
-                logging.info(val + ' value:'+ c[val])
-            except Exception as e:
-                logging.info(val + ' not used '+ str(c[val]) +' '+ str(e))
-
-        # - Get d_dest and d_conf
-        for val in ('d_dest', 'd_conf'):
-            try:
-                c[val] = os.path.normpath(sanitize(parser.get('main', val)))+os.sep
-                logging.info(val + ' value:'+ c[val])
-                if val == 'd_dest':
-                    if (not options.gitinit and c['commit']) and not os.path.isdir(c['d_dest']):
-                        sys.exit('ERROR d_conf: '+ str(c[val]) +
-                        ' is not initialized.\nPlease, try to execute \"keepconf -i\"')
-                if val == 'd_conf':
-                    if not os.path.isdir(c['d_conf']):
-                        sys.exit('ERROR: '+ str(c['d_conf']) +' is not a valid d_conf directory')
-            except Exception as e:
-                sys.exit('ERROR '+ val + ' variable not defined: '+ str(e))
+        # Some checks
+        if (not options.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
+            sys.exit('ERROR: '+ str(c['d_dest']) +' is not a valid \"d_conf\" directory or is not initialized.\nPlease, try to execute \"keepconf -i\"')
+        if not os.path.isdir(str(c['d_conf'])):
+            sys.exit('ERROR: '+ str(c['d_conf']) +' is not a valid \"d_conf\" directory')
 
         # - Parse init option
         if options.gitinit:
@@ -419,7 +400,7 @@ def main():
 
             fetch_time = time.time()
             test_repo_dir(c['d_dest'], c['commit'])
-            print('- Fetching start')
+            print('- Fetching start' + str(c['fetch']))
 
             # + Execute pre-get.d
             if c['pre_get']:
