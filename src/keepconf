@@ -22,12 +22,11 @@ try:
     from subprocess import call
     from distutils.util import strtobool
     from distutils.dir_util import mkpath
-    from collections import OrderedDict
 except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
 __version__ = '2.0.00-dev'
-__fconf__ = '/etc/keepconf/keepconf.cfg'  # default configuration file
+__config__ = '/etc/keepconf/'  # default configuration folder
 VERBOSE=0
 
 def get_arguments():
@@ -46,78 +45,79 @@ def get_arguments():
 
     parser = optparse.OptionParser()
     parser.add_option('-f', '--conf',
-                      dest='conffile',
-                      default=__fconf__,
-                      action='store',
-                      help='configuration file',
-                      metavar="FILE")
+        dest='config',
+        default=__config__,
+        action='store',
+        help='configuration file',
+        metavar="FILE")
     parser.add_option('-i', '--init',
-                      dest='gitinit',
-                      default=False,
-                      action='store_true',
-                      help='initialize git repostory')
+        dest='gitinit',
+        default=False,
+        action='store_true',
+        help='initialize git repostory')
     parser.add_option('-n', '--nocommit',
-                      dest='commit',
-                      default=True,
-                      action='store_false',
-                      help='avoid commit changes')
+        dest='commit',
+        default=True,
+        action='store_false',
+        help='avoid commit changes')
     parser.add_option('-c', '--commitonly',
-                      dest='commitonly',
-                      default=True,
-                      action='store_false',
-                      help='only commit changes')
+        dest='commitonly',
+        default=True,
+        action='store_false',
+        help='only commit changes')
     parser.add_option('-m', '--message',
-                      dest='message',
-                      default=False,
-                      action='store',
-                      help='commit message',
-                      metavar="TEXT")
+        dest='message',
+        default=False,
+        action='store',
+        help='commit message',
+        metavar="TEXT")
     parser.add_option('-s', '--silent',
-                      dest='silent',
-                      default=False,
-                      action='store_true',
-                      help='silent fetching output')
+        dest='silent',
+        default=False,
+        action='store_true',
+        help='silent fetching output')
     parser.add_option('-x', '--xilent',
-                      dest='xilent',
-                      default=False,
-                      action='store_true',
-                      help='silent commit output')
+        dest='xilent',
+        default=False,
+        action='store_true',
+        help='silent commit output')
     parser.add_option('-v', '--verbose',
-                      action='callback',
-                      callback=enable_verbose,
-                      help='verbose output')
+        action='callback',
+        callback=enable_verbose,
+        help='verbose output')
     parser.add_option('-V', '--version',
-                      action='callback',
-                      callback=print_version,
-                      help='show version')
+        action='callback',
+        callback=print_version,
+        help='show version')
     options, _ = parser.parse_args()
 
     return options
 
+
 def process_folder(str_folder, hosts, dest):
     """Execute all files located in a external folder"""
+    # Test if is a directory
     if not os.path.isdir(str_folder):
         logging.info(str_folder +' not exists')
         return
+
     print('- Finding files in ' + str_folder)
-    folder_files = sorted(glob.glob(str_folder + '*'))  # get files in folder
+
+    # Get all files inside the folder
+    folder_files = sorted(glob.glob(str_folder + '*'))
     for b in folder_files:
-        try:
-            print('- Processing:', b)
-            if not (os.path.isfile(b) and os.access(b, os.X_OK)):  # only execute executable files
-                print('WARNING nothing done in non executable file ' + b)
-            else:
-                try:
-                    sys.stdout.flush()
-                    # File is called with:
-                    #  arg1: comma separated list of hosts
-                    #  arg2: "d_dest" variable
-                    call([b, str(",".join(hosts)), str(dest)])  # call file with arguments
-                    sys.stdout.flush()
-                except Exception as e:
-                    sys.exit('ERROR executing file: ' + str(e))
-        except:
-           logging.info('ERROR processing: ' + b +' '+ str(e))
+        print('- Processing:', b)
+
+        # Only execute executable files
+        if not (os.path.isfile(b) and os.access(b, os.X_OK)):
+            print('WARNING nothing done in non executable file ' + b)
+        else:
+            sys.stdout.flush()
+            # File are called with:
+            #  arg1: comma separated list of hosts
+            #  arg2: "d_dest" variable
+            call([b, str(",".join(hosts)), str(dest)])
+            sys.stdout.flush()
     return
 
 
@@ -129,6 +129,7 @@ def yes_or_not(question):
             return strtobool(input().lower())
         except ValueError:
             sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
+
 
 # The following two functions are written by Chin Fang <fangchin@zettar.com>
 # and are part of Ansible software located in github.com/ansible
@@ -193,7 +194,10 @@ def expand_range(line=None):
 
 def sanitize(text_value):
     """Remove especial characters"""
-    excluded = "[\'\"\;\|\<\>]"  # excluded characters
+    # Excluded characters
+    excluded = "[\'\"\;\|\<\>]"
+
+    # Remove excluded characters and clean line
     resultd = re.sub(excluded, '', ((text_value.split('#', 1)[0].split(';', 1)[0]).strip()))
     if resultd:
         return resultd
@@ -231,7 +235,7 @@ def extract_walk(cfg_in_, walking=True):
             g += '*'
         walk_lst.append(g)  # add origin path after its deconstructed route
         paths_lst += walk_lst  # add processed path to the total amount
-    return list(OrderedDict.fromkeys(paths_lst))
+    return sorted(paths_lst)
 
 
 def test_repo_dir(d_dest_, commit_):
@@ -241,50 +245,59 @@ def test_repo_dir(d_dest_, commit_):
 
 
 def git_init(c):
-    if c['repo'] == 'local':  # local repo
-        try:
-            if os.path.isdir(os.path.join(c['d_dest'],'.git')):
-                print('WARNING: A .git folder exists inside '+ c['d_dest'] +' directory!')
-                if not yes_or_not('Do you want to initialize an exiting repository?'):
-                    logging.info('Avoid initializating folder with .git directory')
-                    sys.exit(0)
-            sys.stdout.flush()
-            call(('git', 'init', c['d_dest']))
-            sys.stdout.flush()
-        except Exception as e:
-            sys.stdout.flush()
-            sys.exit('ERROR local repository not initializated: '+ str(e))
+    '''Initialize git repo. Create path and init or clone'''
 
-    elif c['repo']:  # remote repo
-        try:
-            if os.path.isdir(c['d_dest']):
-                if os.listdir(c['d_dest']) != []:
-                    print('WARNING: Destination directory exists and is not empty!')
-                    print('Please, fix '+c['d_dest'])
-                    if not yes_or_not('Do you already did it, continue?'):
-                        logging.info('Avoid clonning repository into destination folder: '+c['d_dest'])
-                        sys.exit(0)
-            else:
-                logging.info('Creating directory'+ c['d_dest'])
-                os.makedirs(c['d_dest'])
-            print('Clonning repository...')
-            sys.stdout.flush()
-            call(('git', 'clone', c['repo'], c['d_dest']))
-            sys.stdout.flush()
-        except Exception as e:
-            sys.stdout.flush()
-            sys.exit('ERROR clonning remote repository: '+ str(e))
+    # Local repository
+    if c['repo'] == 'local':
+        if os.path.isdir(os.path.join(c['d_dest'],'.git')):
+            print('WARNING: A .git folder exists inside '+ c['d_dest'] +' directory!')
+            if not yes_or_not('Do you want to initialize an exiting repository?'):
+                logging.info('Avoid initializating folder with .git directory')
+                sys.exit(0)
+        sys.stdout.flush()
+        call(('git', 'init', c['d_dest']))
+        sys.stdout.flush()
+
+    # Remote repository
+    elif c['repo']:
+        if os.path.isdir(c['d_dest']):
+            if os.listdir(c['d_dest']) != []:
+                print('WARNING: Destination directory exists and is not empty!')
+                print('Please, fix '+c['d_dest'])
+                if not yes_or_not('Do you already did it, continue?'):
+                    logging.info('Avoid clonning repository into destination folder: '+c['d_dest'])
+                    sys.exit(0)
+        else:
+            logging.info('Creating directory'+ c['d_dest'])
+            os.makedirs(c['d_dest'])
+        print('Clonning repository...')
+        sys.stdout.flush()
+        call(('git', 'clone', c['repo'], c['d_dest']))
+        sys.stdout.flush()
+
     else:
         sys.exit('ERROR initializating repository: ' + str(c['repo']))
+
+    # Exit after initialize
     sys.exit(0)
 
 def get_files_list(c, key1, key2):
+    '''Get content of a list of files readed from config variable'''
+    # For store list to return
     values = []
+
+    # If key have something...
     if c[key1]:
-        for file_host in c[key1].replace(" ", "").split(',', 1):
-            logging.info('Reading '+ key2 +' file: '+ file_host)
-            if(os.path.isfile(file_host)):
-                with open(file_host) as f:
+
+        # For each file in the list
+        for file_var in c[key1].replace(" ", "").split(',', 1):
+            logging.info('Reading '+ key2 +' file: '+ file_var)
+
+            # Test if if a file and open it
+            if(os.path.isfile(file_var)):
+                with open(file_var) as f:
+
+                    # Read lines and expand range if is the case
                     for line in f:
                         try:
                             lne = sanitize(line)
@@ -295,16 +308,19 @@ def get_files_list(c, key1, key2):
                                 values.append(lne)
                         except:
                             continue
-                values = sorted(set(values))  # remove duplicate names and order
+
+                # Remove duplicate names and order
+                values = sorted(set(values))
             else:
-                print('  File not exists: '+ str(file_host))
+                print('  File not exists: '+ str(file_var))
     else:
         logging.info('Empty "'+ key1 +'"')
     logging.info(key1 +' list: ' + str(values))
     return values
 
 
-def print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed):
+def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, time_committed):
+    '''Print stats and write csv'''
     print('- ')
 
     if c['fetch']:
@@ -318,12 +334,24 @@ def print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed
     if c['fetch'] or c['commit']:
         print('- Completed in: %.2f seconds' % total_time)
 
-    # + Write csv report file
-    if c['f_monitor']:
+    # Generate and write csv report file 
+    if c['d_monitor']:
 
-        logging.info('Writing stats to monitor file '+ str(c['f_monitor']))
-        with open(c['f_monitor'], "w"):  # clean monitor file
+        # Monitor file is destination path + name of configuration with replaced extension to .csv
+        mon_file = str(c['d_monitor'] + os.path.splitext(os.path.basename(file_conf))[0] + '.csv')
+
+        # Check if path exists, if not, do it
+        if not os.path.isdir(c['d_monitor']):
+            logging.info('Making destination csv folder: ' + str(c['d_monitor']))
+            mkpath(c['d_monitor'])
+        else:
+            logging.info('Destination csv folder exists: ' + str(c['d_monitor']))
+
+        # Clean monitor file
+        with open(mon_file, "w"):  # clean monitor file
             pass
+
+        # Create csv values
         if hosts_bad:
             hosts_bad_list = ","+ ','.join(['\"'+ x +'\"' for x in hosts_bad])
         else:
@@ -332,9 +360,13 @@ def print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed
             hosts_ok_list = "," +','.join(['\"'+ x +'\"' for x in hosts_ok])
         else:
             hosts_ok_list = ''
-        with open(c['f_monitor'], "a") as file_monitor:
+
+        logging.info('Writing stats to monitor file '+ str(mon_file))
+
+        # Write into file
+        with open(mon_file, "a") as file_monitor:
             try:
-                file_monitor.write('\"CFG-FILE\",\"' + os.path.basename(options.conffile)+'\"\n')
+                file_monitor.write('\"CFG-FILE\",\"' + os.path.basename(file_conf)+'\"\n')
             except:
                 file_monitor.write('\"BadCfgFileName\"\n')
             try:
@@ -357,7 +389,11 @@ def print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed
 
 
 def fetch_process(c, options):
+    ''' Fetch files from hosts'''
+
+    # Define list for store ok and bad fetched hosts
     hosts_ok, hosts_bad = [], []
+
     test_repo_dir(c['d_dest'], c['commit'])
     print('- Fetching start')
 
@@ -375,7 +411,7 @@ def fetch_process(c, options):
     for fpath in c['files']:
         if fpath.startswith('!'):
             logging.info('Exclude: '+ fpath[1:].rstrip())
-            c['cfg_ex'].append(lpath[1:])
+            c['cfg_ex'].append(fpath[1:])
         elif fpath.startswith('&'):
             logging.info('Force Incl: ', fpath[1:].rstrip())
             c['cfg_frz'].append(fpath[1:])
@@ -428,7 +464,7 @@ def fetch_process(c, options):
         else:
             logging.info('Destination folder exists: ' + final_path)
  
-        print('- Fetching:', host)
+        print('- Fetching host: '+ host)
 
         # ssh options for avoid annoying errors in rsync, if you need security, please remove from
         # the rsync_call "'-e', ssh_rsync_opt," or uncomment the following two "ssh_rsync_opt".
@@ -469,6 +505,7 @@ def fetch_process(c, options):
     print('- Fetching done')
     return hosts_ok, hosts_bad
                 
+
 def fetch_commit(c, options, hosts_ok, hosts_bad):
     test_repo_dir(c['d_dest'], c['commit'])
     print('- Committing start')
@@ -508,7 +545,9 @@ def fetch_commit(c, options, hosts_ok, hosts_bad):
     print('- Committing done')
 
 def assign_variable(c, parser, section, key, normpath=False):
+    '''Assign variables from config file'''
     try:
+        # Normalize and/or sanitize variables
         if normpath:
             value = os.path.normpath(sanitize(parser.get(section, key)))+os.sep
         else:
@@ -516,64 +555,75 @@ def assign_variable(c, parser, section, key, normpath=False):
         if value.lower() in ('false', '0', 'not'):
             value = False
     except:
+        # In case of problems, assign default value
         value = c[key]
+
     logging.info('['+section +'] '+ key +': '+ str(value))
     return value
 
 
-#  Some test for avoid annoying errors
-try:
-    call_out('rsync', True)
-except:
-    sys.exit('ERROR rsync not execute correctly in test. Maybe not installed')
-
-try:
-    call_out('git', True)
-except:
-    sys.exit('ERROR git not execute correctly in test. Maybe not installed')
-
-
 def main():
-        # Start timer for the whole process
-        start_time = time.time()
+    """main entry point, manage behaviour based on configuration"""
 
-        c = {
-        'd_dest': False,
-        'f_monitor': False,
-        'list_hosts': False,
-        'list_files': False,
-        'fetch': True,
-        'pre_get': False,
-        'post_get': False,
-        'max_size': '25M',
-        'rsync_user': 'backup',
-        'rsync_timeout': '5',
-        'rsync_opt': 'arHvzL',
-        'commit': True,
-        'pre_commit': False,
-        'post_commit': False,
-        'repo': 'local'}
+    # Start timer for the whole process
+    start_time = time.time()
 
-        options = get_arguments()
+    # Default values
+    c = {
+    'd_dest': False,
+    'd_monitor': False,
+    'list_hosts': False,
+    'list_files': False,
+    'fetch': True,
+    'pre_get': False,
+    'post_get': False,
+    'max_size': '25M',
+    'rsync_user': 'backup',
+    'rsync_timeout': '5',
+    'rsync_opt': 'arHvzL',
+    'commit': True,
+    'pre_commit': False,
+    'post_commit': False,
+    'repo': 'local'}
 
-        # - Get and parse configuration file
-        logging.info('Reading configuration file: '+ options.conffile)
-        try:
-            if not (os.path.isfile(options.conffile)):
-                raise ValueError('Invalid configuration file')
-            else:
-                parser = ConfigParser()
-                parser.read(options.conffile)
-        except ValueError as e:
-            sys.exit('ERROR reading configuration file: '+ str(options.conffile) +' '+  str(e))
+    # Get arguments from command line
+    options = get_arguments()
 
-        # - Get key values
+    logging.info('Parsing configuration path: '+ options.config)
+
+    # Test if config path is a file or a folder, in that case, retrieve all .cfg files
+    if (os.path.isfile(str(options.config))):
+        logging.info('Config path is a file')
+        conf_list = (options.config,)
+    else:
+        logging.info('Config path is a folder')
+        conf_list = sorted(glob.glob(options.config + '*.cfg'))
+    logging.info('Files for process: ' + str(conf_list))
+
+    # Almost one configuration file
+    if len(conf_list) == 0:
+        logging.error('Any valid configuration files for use')
+
+    # Process each configuration file 
+    for index, file_conf in enumerate(conf_list):
+
+        # For more than one file, add separate banner
+        if index > 0:
+            print('\n-------------------------\n')
+
+        print('- Processing: '+ str(file_conf))
+
+        # Parse options in config file
+        parser = ConfigParser()
+        parser.read(file_conf)
+
+        # Assign variables from config file to main dictionary
         c['d_dest'] = assign_variable(c, parser, 'main', 'd_dest')
         c['list_hosts'] = assign_variable(c, parser, 'main', 'list_hosts')
-        c['hosts'] = []
+        c['hosts'] = []  # For fulfill later with hostname list
         c['list_files'] = assign_variable(c, parser, 'main', 'list_files')
-        c['files'] = []
-        c['f_monitor'] = assign_variable(c, parser, 'main', 'f_monitor')
+        c['files'] = []  # For fulfill later with files list
+        c['d_monitor'] = assign_variable(c, parser, 'main', 'd_monitor')
         if options.commitonly:
             c['fetch'] = assign_variable(c, parser, 'sync', 'fetch')
         else:
@@ -590,19 +640,19 @@ def main():
         c['pre_commit'] = assign_variable(c, parser, 'vcs', 'pre_commit', normpath=True)
         c['post_commit'] = assign_variable(c, parser, 'vcs', 'post_commit', normpath=True)
         c['repo'] = assign_variable(c, parser, 'vcs', 'repo')
-        c['cfg_ex'] = []
-        c['cfg_frz'] = []
-        c['cfg_in'] = []
+        c['cfg_ex'] = []  # For fulfill later with excluded files list
+        c['cfg_frz'] = []  # For fulfill later with force include files list
+        c['cfg_in'] = []  # For fulfill later with include files list
 
-        # Check variable requirements
+        # Check "d_dest" directory requirements
         if (not options.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
             sys.exit('ERROR: \"'+ str(c['d_dest']) +'\" is not a valid \"d_dest\" directory or is not initialized.\nPlease, try to execute \"keepconf -i\"')
 
-        # - Parse init option
+        # Run init option
         if options.gitinit:
             git_init(c)
 
-        # - Parse fetch (no commit) option
+        # Run fetch (no commit) option
         if c['fetch']:
 
             # Start timer for fetch
@@ -613,10 +663,11 @@ def main():
             
             # Register total fetch time
             time_fetched = time.time() - fetch_time
+
         else:
             logging.info('Avoid fetching files')
 
-        # Parse commit option
+        # Run commit option
         if c['commit'] and c['repo']:
 
             # Start timer for commit
@@ -631,9 +682,9 @@ def main():
         else:
             logging.info('Avoid committing changes')
 
-        # Print stats
+        # Run stats
         if c['fetch'] or (c['commit'] and c['repo']):
-            print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed)
+            stats_and_csv(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, time_committed)
 
 if __name__ == "__main__":
     main()
