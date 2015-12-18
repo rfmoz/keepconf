@@ -278,6 +278,84 @@ def git_init(c):
         sys.exit('ERROR initializating repository: ' + str(c['repo']))
     sys.exit(0)
 
+def get_files_list(c, key1, key2):
+    values = []
+    if c[key1]:
+        for file_host in c[key1].replace(" ", "").split(',', 1):
+            logging.info('Reading '+ key2 +' file: '+ file_host)
+            if(os.path.isfile(file_host)):
+                with open(file_host) as f:
+                    for line in f:
+                        try:
+                            lne = sanitize(line)
+                            if detect_range(lne):
+                                logging.info('Range detected: '+ lne)
+                                values = values + expand_range(lne)
+                            else:
+                                values.append(lne)
+                        except:
+                            continue
+                values = sorted(set(values))  # remove duplicate names and order
+            else:
+                print('  File not exists: '+ str(file_host))
+    else:
+        logging.info('Empty "'+ key1 +'"')
+    logging.info(key1 +' list: ' + str(values))
+    return values
+
+
+def print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed):
+    print('- ')
+
+    if c['fetch']:
+        print('- Hosts rsync\'ed: ' +'['+ str(len(hosts_ok)) +'] '+ ', '.join(hosts_ok))
+        print('- Hosts not rsync\'ed: ' +'['+ str(len(hosts_bad)) +'] '+ ', '.join(hosts_bad))
+        print('- Fetched in: %.2f seconds' % time_fetched)
+    if c['commit'] and c['repo']:
+        print('- Committed in: %.2f seconds' % time_committed)
+
+    total_time = time.time() - start_time
+    if c['fetch'] or c['commit']:
+        print('- Completed in: %.2f seconds' % total_time)
+
+    # + Write csv report file
+    if c['f_monitor']:
+
+        logging.info('Writing stats to monitor file '+ str(c['f_monitor']))
+        with open(c['f_monitor'], "w"):  # clean monitor file
+            pass
+        if hosts_bad:
+            hosts_bad_list = ","+ ','.join(['\"'+ x +'\"' for x in hosts_bad])
+        else:
+            hosts_bad_list = ''
+        if hosts_ok:
+            hosts_ok_list = "," +','.join(['\"'+ x +'\"' for x in hosts_ok])
+        else:
+            hosts_ok_list = ''
+        with open(c['f_monitor'], "a") as file_monitor:
+            try:
+                file_monitor.write('\"CFG-FILE\",\"' + os.path.basename(options.conffile)+'\"\n')
+            except:
+                file_monitor.write('\"BadCfgFileName\"\n')
+            try:
+                file_monitor.write('\"OK\",\"' + str(len(hosts_ok)) + '\"' + hosts_ok_list + '\n')
+            except:
+                file_monitor.write('\"OK\",\"0\"\n')
+            try:
+                file_monitor.write('\"BAD\",\"' + str(len(hosts_bad)) + '\"' + hosts_bad_list + '\n')
+            except:
+                file_monitor.write('\"BAD\",\"0\"\n')
+            try:
+                file_monitor.write('\"FETCH-T\",\"%.2f' % time_fetched + '\"\n')
+            except:
+                file_monitor.write('\"FETCH-T\",\"0\"\n')
+            try:
+                file_monitor.write('\"COMMIT-T\",\"%.2f' % time_committed + '\"\n')
+            except:
+                file_monitor.write('\"COMMIT-T\",\"0\"\n')
+            file_monitor.write('\"TOTAL-T\",\"%.2f' % total_time + '\"\n')
+
+
 #  Some test for avoid annoying errors
 try:
     call_out('rsync', True)
@@ -291,6 +369,7 @@ except:
 
 
 def main():
+        # Start timer for the whole process
         start_time = time.time()
 
         hosts_ok, hosts_bad = [], []
@@ -375,40 +454,25 @@ def main():
 
         # - Parse fetch (no commit) option
         if c['fetch']:
+
+            # Start timer for fetch
             fetch_time = time.time()
+
             test_repo_dir(c['d_dest'], c['commit'])
             print('- Fetching start')
 
-            # + Get list of hosts and files
-            for key1, key2 in (('list_hosts','hosts'), ('list_files','files')):
-                if c[key1]:
-                    for file_host in c[key1].replace(" ", "").split(',', 1):
-                        logging.info('Reading '+ key2 +' file: '+ file_host)
-                        if(os.path.isfile(file_host)):
-                            with open(file_host) as f:
-                                for line in f:
-                                    try:
-                                        lne = sanitize(line)
-                                        if detect_range(lne):
-                                            logging.info('Range detected: '+ lne)
-                                            c[key2] = c[key2] + expand_range(lne)
-                                        else:
-                                            c[key2].append(lne)
-                                    except:
-                                        continue
-                            c[key2] = sorted(set(c[key2]))  # remove duplicate names and order
-                        else:
-                            print('  File not exists: '+ str(file_host))
-                else:
-                    logging.info('Empty "'+ key1 +'"')
-                logging.info(key1 +' list: ' + str(c[key2]))
+            # Get list of files with hostnames
+            c['hosts'] = get_files_list(c, 'list_hosts','hosts')
 
-            # + Execute pre-get.d
+            # Get list of files with filelist
+            c['files'] = get_files_list(c, 'list_files','files')
+
+            # Execute pre-get.d
             if c['pre_get']:
                 process_folder(c['pre_get'], c['hosts'], c['d_dest'])
 
-            # + Construct files
-            for fpath in c['files']:  # detect each type of line
+            # Construct lists for each includes / excludes / force includes files. Clean duplicates and order
+            for fpath in c['files']:
                 if fpath.startswith('!'):
                     logging.info('Exclude: '+ fpath[1:].rstrip())
                     c['cfg_ex'].append(lpath[1:])
@@ -418,17 +482,15 @@ def main():
                 else:
                     logging.info('Include: '+ fpath.rstrip())
                     c['cfg_in'].append(fpath)
-
-            # + Write to include/exclude rsync file
             for val in ('cfg_in', 'cfg_ex', 'cfg_frz'):
-                c[val]=sorted(set(c[val]))  # clean duplicates and order
+                c[val]=sorted(set(c[val]))
 
-            try:   # temporary file for include/exclude to rsync
-                _, f_tmp_walk = tempfile.mkstemp()
-                f_walk = open(f_tmp_walk, 'w')
-            except:
-                sys.exit('ERROR creating temporary file')
+            # Create temporary file for store the list of files and pass later to rsync
+            _, f_tmp_walk = tempfile.mkstemp()
+            f_walk = open(f_tmp_walk, 'w')
 
+            # Write into temp file each list before extract the path to the file/folder.
+            # This order of list (force>exclude>include) is a requirement for the file.
             if c['cfg_frz']:
                 paths_lst_frz = extract_walk(c['cfg_frz'])
                 logging.info('Force paths: '+str(c['cfg_frz'])+'->'+str(paths_lst_frz))
@@ -447,63 +509,76 @@ def main():
                 for e in paths_lst_in:
                     f_walk.write('+ ' + e + '\n')
 
-            f_walk.write('- *\n')  # this line must be always in the file
+            # The temp file must have always the following last line
+            f_walk.write('- *\n')
+
+            # Reset position to the beginning of the file
             f_walk.seek(0)
 
-
+            # For each hostname in the list...
             for host in c['hosts']:
+
+                # Define path name for store fetched files
                 final_path = os.path.join(c['d_dest'], host)
-                if not os.path.isdir(final_path):  # if local folder not exists, do it
+
+                # Check if path exists, if not, do it
+                if not os.path.isdir(final_path):
                     logging.info('Making destination folder: ' + final_path)
                     mkpath(final_path)
                 else:
                     logging.info('Destination folder exists: ' + final_path)
  
-                # + Fetching content
                 print('- Fetching:', host)
+
                 # ssh options for avoid annoying errors in rsync, if you need security, please remove from
-                # the rsync_call "'-e', ssh_rsync_opt,"
+                # the rsync_call "'-e', ssh_rsync_opt," or uncomment the following two "ssh_rsync_opt".
                 if VERBOSE:
                     ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null'
+                    # ssh_rsync_opt='""'
                 else:
                     ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet'
-                # syncing files, for modify rsync call, the place is the following line:
+                    # ssh_rsync_opt='""'
+
+                # Create rsync call. For modify it, the place is the following line:
                 rsync_call = ('rsync', '-e', ssh_rsync_opt, '-'+c['rsync_opt'], '--progress', '--delete-excluded',
                 '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+c['max_size'],
                 '--include-from=' + f_walk.name, '--prune-empty-dirs', c['rsync_user']+'@'+host+':/', final_path)
                 logging.info(' '.join(map(str,rsync_call)))
-                try:
-                    sys.stdout.flush()
-                    if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
-                        hosts_ok.append(host)
-                    else:
-                        hosts_bad.append(host)
-                    sys.stdout.flush()
 
-                except Exception as e:
-                    sys.stdout.flush()
-                    sys.exit('ERROR executing rsync command: ' + str(e))
+                # Execute rsync and construct list with ok and bad hosts
+                sys.stdout.flush()
+                if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
+                    hosts_ok.append(host)
+                else:
+                    hosts_bad.append(host)
+                sys.stdout.flush()
 
+            # Close temporary file with the list of files used by rsync
             f_walk.close()
 
+            # Don't delete file if verbose mode is enabled (for easy debug)
             if VERBOSE:
                 logging.info('WARNING temporary files not deleted in verbose mode')
             else:
                 os.remove(f_tmp_walk)
 
-            # + Execute post-get.d
+            # Execute post-get.d
             if c['post_get']:
                 process_folder(c['post_get'], c['hosts'], c['d_dest'])
 
+            # Register total fetch time
             time_fetched = time.time() - fetch_time
+
             print('- Fetching done')
         else:
             logging.info('Avoid fetching files')
 
-        # + Parse commit option
+        # Parse commit option
         if c['commit'] and c['repo']:
 
+            # Start timer for commit
             commit_time = time.time()
+
             test_repo_dir(c['d_dest'], c['commit'])
             print('- Committing start')
 
@@ -511,7 +586,7 @@ def main():
             if c['pre_commit']:
                 process_folder(c['pre_commit'], c['hosts'], c['d_dest'])
 
-            # Parse message option
+            # Parse message option. Use default or custom.
             if options.message:
                 message = 'Keepconf: ' + options.message
             else:
@@ -520,93 +595,35 @@ def main():
                     message += '\nHosts ok: '+'['+ str(len(hosts_ok))+'] ' + ', '.join(hosts_ok)
                     message += '\nHosts bad: '+'['+ str(len(hosts_bad))+'] ' + ', '.join(hosts_bad)
 
-            # Commit into local or remote repository
+            # Commit files into local or remote repository
+            sys.stdout.flush()
             if c['repo'] == 'local':
                 print('- Committing into local repository')
-                try:
-                    sys.stdout.flush()
-                    call_out(('git', 'add', c['d_dest']+'*'), options.xilent, c['d_dest'])
-                    call_out(('git', 'commit', '-am', message), options.xilent, c['d_dest'])
-                except Exception as e:
-                    sys.stdout.flush()
-                    sys.exit('ERROR committing into local repository: ' + str(e))
+                call_out(('git', 'add', c['d_dest']+'*'), options.xilent, c['d_dest'])
+                call_out(('git', 'commit', '-am', message), options.xilent, c['d_dest'])
             else:
-                # print '- Updating remote repository' # for avoid problems
+                # print('- Updating remote repository')
                 # call_out(('git', 'pull'), options.xilent, cwd=c['d_dest'])
                 print('- Committing into remote repository')
-                try:
-                    sys.stdout.flush()
-                    call_out(('git', 'add', '--all'), options.xilent, c['d_dest'])
-                    call_out(('git', 'commit', '-am', message), options.xilent, c['d_dest'])
-                    call_out(('git', 'push'), options.xilent, c['d_dest'])
-                except Exception as e:
-                    sys.stdout.flush()
-                    sys.exit('ERROR committing into remote repository: ' + str(e))
+                call_out(('git', 'add', '--all'), options.xilent, c['d_dest'])
+                call_out(('git', 'commit', '-am', message), options.xilent, c['d_dest'])
+                call_out(('git', 'push'), options.xilent, c['d_dest'])
             sys.stdout.flush()
 
             # Execute post-commit.d
             if c['post_commit']:
                 process_folder(c['post_commit'], c['hosts'], c['d_dest'])
 
+            # Register total commit time
             time_committed = time.time() - commit_time
+
             print('- Committing done')
         else:
             logging.info('Avoid committing changes')
 
-        # + Print stats
+        # Print stats
         if c['fetch'] or (c['commit'] and c['repo']):
-            print('- ')
-
-        if c['fetch']:
-            print('- Hosts rsync\'ed: ' +'['+ str(len(hosts_ok)) +'] '+ ', '.join(hosts_ok))
-            print('- Hosts not rsync\'ed: ' +'['+ str(len(hosts_bad)) +'] '+ ', '.join(hosts_bad))
-            print('- Fetched in: %.2f seconds' % time_fetched)
-        if c['commit'] and c['repo']:
-            print('- Committed in: %.2f seconds' % time_committed)
-
-        total_time = time.time() - start_time
-        if c['fetch'] or c['commit']:
-            print('- Completed in: %.2f seconds' % total_time)
-
-        # + Write csv report file
-        if c['f_monitor']:
-
-            logging.info('Writing stats to monitor file '+ str(c['f_monitor']))
-            try:
-                with open(c['f_monitor'], "w"):  # clean monitor file
-                    pass
-                if hosts_bad:
-                    hosts_bad_list = ","+ ','.join(['\"'+ x +'\"' for x in hosts_bad])
-                else:
-                    hosts_bad_list = ''
-                if hosts_ok:
-                    hosts_ok_list = "," +','.join(['\"'+ x +'\"' for x in hosts_ok])
-                else:
-                    hosts_ok_list = ''
-                with open(c['f_monitor'], "a") as file_monitor:
-                    try:
-                        file_monitor.write('\"CFG-FILE\",\"' + os.path.basename(options.conffile)+'\"\n')
-                    except:
-                        file_monitor.write('\"BadCfgFileName\"\n')
-                    try:
-                        file_monitor.write('\"OK\",\"' + str(len(hosts_ok)) + '\"' + hosts_ok_list + '\n')
-                    except:
-                        file_monitor.write('\"OK\",\"0\"\n')
-                    try:
-                        file_monitor.write('\"BAD\",\"' + str(len(hosts_bad)) + '\"' + hosts_bad_list + '\n')
-                    except:
-                        file_monitor.write('\"BAD\",\"0\"\n')
-                    try:
-                        file_monitor.write('\"FETCH-T\",\"%.2f' % time_fetched + '\"\n')
-                    except:
-                        file_monitor.write('\"FETCH-T\",\"0\"\n')
-                    try:
-                        file_monitor.write('\"COMMIT-T\",\"%.2f' % time_committed + '\"\n')
-                    except:
-                        file_monitor.write('\"COMMIT-T\",\"0\"\n')
-                    file_monitor.write('\"TOTAL-T\",\"%.2f' % total_time + '\"\n')
-            except Exception as e:
-                sys.exit('ERROR writing into monitor file: ' + str(e))
+            print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed)
 
 if __name__ == "__main__":
     main()
