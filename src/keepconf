@@ -94,7 +94,7 @@ def get_arguments():
 
     return options
 
-def process_folder(str_folder, conf, dest):
+def process_folder(str_folder, hosts, dest):
     """Execute all files located in a external folder"""
     if not os.path.isdir(str_folder):
         logging.info(str_folder +' not exists')
@@ -109,7 +109,10 @@ def process_folder(str_folder, conf, dest):
             else:
                 try:
                     sys.stdout.flush()
-                    call([b, str(conf), str(dest)])  # call file with arguments
+                    # File is called with:
+                    #  arg1: comma separated list of hosts
+                    #  arg2: "d_dest" variable
+                    call([b, str(",".join(hosts)), str(dest)])  # call file with arguments
                     sys.stdout.flush()
                 except Exception as e:
                     sys.exit('ERROR executing file: ' + str(e))
@@ -291,10 +294,8 @@ def main():
         start_time = time.time()
 
         hosts_ok, hosts_bad = [], []
-        d_roles = 'roles/'  # default roles directory inside 'd_conf'
 
         c = {
-        'd_conf': False,
         'd_dest': False,
         'f_monitor': False,
         'list_hosts': False,
@@ -338,7 +339,6 @@ def main():
             return value
 
         # - Get key values
-        c['d_conf'] = assign_variable(c, 'main', 'd_conf')
         c['d_dest'] = assign_variable(c, 'main', 'd_dest')
         c['list_hosts'] = assign_variable(c, 'main', 'list_hosts')
         c['hosts'] = []
@@ -367,9 +367,7 @@ def main():
 
         # Check variable requirements
         if (not options.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
-            sys.exit('ERROR: '+ str(c['d_dest']) +' is not a valid \"d_dest\" directory or is not initialized.\nPlease, try to execute \"keepconf -i\"')
-        if not os.path.isdir(str(c['d_conf'])):
-            sys.exit('ERROR: '+ str(c['d_conf']) +' is not a valid \"d_conf\" directory')
+            sys.exit('ERROR: \"'+ str(c['d_dest']) +'\" is not a valid \"d_dest\" directory or is not initialized.\nPlease, try to execute \"keepconf -i\"')
 
         # - Parse init option
         if options.gitinit:
@@ -381,30 +379,33 @@ def main():
             test_repo_dir(c['d_dest'], c['commit'])
             print('- Fetching start')
 
-            # + Execute pre-get.d
-            if c['pre_get']:
-                process_folder(c['pre_get'], c['d_conf'], c['d_dest'])
-
             # + Get list of hosts and files
             for key1, key2 in (('list_hosts','hosts'), ('list_files','files')):
                 if c[key1]:
                     for file_host in c[key1].replace(" ", "").split(',', 1):
                         logging.info('Reading '+ key2 +' file: '+ file_host)
-                        with open(file_host) as f:
-                            for line in f:
-                                try:
-                                    lne = sanitize(line)
-                                    if detect_range(lne):
-                                        logging.info('Range detected: '+ lne)
-                                        c[key2] = c[key2] + expand_range(lne)
-                                    else:
-                                        c[key2].append(lne)
-                                except:
-                                    continue
-                        c[key2] = sorted(set(c[key2]))  # remove duplicate names and order
+                        if(os.path.isfile(file_host)):
+                            with open(file_host) as f:
+                                for line in f:
+                                    try:
+                                        lne = sanitize(line)
+                                        if detect_range(lne):
+                                            logging.info('Range detected: '+ lne)
+                                            c[key2] = c[key2] + expand_range(lne)
+                                        else:
+                                            c[key2].append(lne)
+                                    except:
+                                        continue
+                            c[key2] = sorted(set(c[key2]))  # remove duplicate names and order
+                        else:
+                            print('  File not exists: '+ str(file_host))
                 else:
                     logging.info('Empty "'+ key1 +'"')
                 logging.info(key1 +' list: ' + str(c[key2]))
+
+            # + Execute pre-get.d
+            if c['pre_get']:
+                process_folder(c['pre_get'], c['hosts'], c['d_dest'])
 
             # + Construct files
             for fpath in c['files']:  # detect each type of line
@@ -484,6 +485,7 @@ def main():
                     sys.exit('ERROR executing rsync command: ' + str(e))
 
             f_walk.close()
+
             if VERBOSE:
                 logging.info('WARNING temporary files not deleted in verbose mode')
             else:
@@ -491,7 +493,7 @@ def main():
 
             # + Execute post-get.d
             if c['post_get']:
-                process_folder(c['post_get'], c['d_conf'], c['d_dest'])
+                process_folder(c['post_get'], c['hosts'], c['d_dest'])
 
             time_fetched = time.time() - fetch_time
             print('- Fetching done')
@@ -507,7 +509,7 @@ def main():
 
             # Execute pre-commit.d
             if c['pre_commit']:
-                process_folder(c['pre_commit'], c['d_conf'], c['d_dest'])
+                process_folder(c['pre_commit'], c['hosts'], c['d_dest'])
 
             # Parse message option
             if options.message:
@@ -544,7 +546,7 @@ def main():
 
             # Execute post-commit.d
             if c['post_commit']:
-                process_folder(c['post_commit'], c['d_conf'], c['d_dest'])
+                process_folder(c['post_commit'], c['hosts'], c['d_dest'])
 
             time_committed = time.time() - commit_time
             print('- Committing done')
