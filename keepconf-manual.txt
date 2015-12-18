@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 1.2.10
-                               Ricardo F.
-                             26/August/2015
+                             version 2.0.00
+                                Ricardo F.
+                             18/December/2015
 
 
 
@@ -16,8 +16,6 @@ Keepconf is a agentless tool for backup and track files from remote hosts. It
 uses rsync and git for the purpouse. Indeed, it can:
   - process lists of files/folders for retrieve it from hosts
   - limit size of the files fetched
-  - allow different users for each host
-  - manage groups of properties
   - store content in different defined directories
   - trigger hooks for execute whatever after/before fetching/committing
   - use a local or remote git repository
@@ -30,7 +28,7 @@ uses rsync and git for the purpouse. Indeed, it can:
 
 Almost these version of the following software:
 
-   python 2.7 with this modules:
+   python 3 with this modules:
       sys, optparse, os, glob, time, string, re, ConfigParser,
       tempfile, subprocess, distutils, collections
    rsync 3.0
@@ -160,9 +158,8 @@ There are only a few command line options :
 | Configuration file |
 ======================
 
-Inside the configuration file, anything following a sharp ('#'), semicolon
-(';') or comma character (',') is ignored. Space caracter is allowed, but
-if is possible, avoid it.
+Inside the configuration file, anything following a sharp ('#') or semicolon
+(';') is ignored. Space caracter is allowed, but if is possible, avoid it.
 All names of sections and variables must be only in lowercase.
 Take care of the tabs and spaces at the beginning of each line, dont add any
 of them.
@@ -170,14 +167,23 @@ of them.
 [main]
   Section for general variables. The following are available inside here:
 
-  d_conf=
-    Directory for the hosts configuration files. It is a requirement for
-    the basic behaviour of keepconf. See "Hosts configuration file format"
-    section for more information about the files stored there. Require a
-    full path definition.
+  list_hosts=
+    Path to file or comma separated list of files with the list of hosts to
+    fetch. One per line, anything following a sharp ('#') or semicolon (';')
+    is ignored. 
 
     Example:
-          d_conf = /etc/keepconf/hosts/
+          list_hosts = /etc/keepconf/servers/hosts_prod.txt
+          list_hosts = /etc/mydir/hosts_prod.txt, /etc/mydir/hosts_dev.txt
+
+  list_files=
+    Path to file or comma separated list of files with the list fo files to
+    fetch. One per line, anything following a sharp ('#') or semicolon (';')
+    is ignored. 
+
+    Example:
+          list_files = /etc/keepconf/servers/files_default.txt
+          list_files = /etc/mydir/files_default.txt, /etc/mydir/files_env1.txt
 
   d_dest=
     Directory for store the remote files and locate the repository. It is a
@@ -302,8 +308,9 @@ executed in diferent stages of the flow:
 
 pre-get -> fetch files -> post-get -> pre-commit -> commit -> post-commit
 
-Two arguments are passed to each file when its executed, first is "d_conf" and
-second is "d_dest".
+Two arguments are passed to each file when its executed, first is a comma 
+separated list with the list of hosts applicable and second is "d_dest" 
+variable.
 
 The definition of the directory must be a complete route starting from the
 root path.
@@ -325,136 +332,6 @@ execution.
 it is included into "post-commit.d" directory at the github repo.
 
 Full path definition is required for this variables.
-
-
-===================================
-| Hosts configuration file format |
-===================================
-
-Each host file located into "d_conf" directory need to end with a '.cfg'
-extension and can have this format and variables:
-
-[main]
-directory = /
-max_size = 25M
-rsync_user = root
-[roles]
-example1.cfg
-example_dir/example2.cfg
-[hosts]
-host1
-host2
-[files]
-/etc/
-/home/
-!/home/user1/
-&/home/user1/.bashrc
-/opt/mysw/conf/
-
-Anything following a sharp ('#') a semicolon (';') or a comma (',') is
-ignored. Space character is allowed, but if is possible, avoid it use.
-Take care of the tabs and spaces at the beginning of each line, dont add any
-of them.
-
-The section headers are a must before include their respective variables.
-Only one hosts must be defined for considering the file valid, the other
-sections and variables are optional.
-
-[main]
-  Section for general variables. The following are available inside here:
-
-  directory=
-    Path for store the files fetched inside "d_dest" directory. Is a usefull
-    option for separate different enviorments.
-
-    If starts wiht a slash '/' it refers as a full path.
-    If not starts with '/', the path will be: d_dest + directory + host name
-    If directory is not set, the path will be: d_dest + host name
-
-    Examples:
-           directory = / # (Default)
-           directory = web-servers/
-           directory = web-servers/prod/
-
-  max_size=
-    Particular size limit for the files to fetch. It must be a number followed
-    by the initial of the size name.
-
-    Examples:
-           max_size = 25M  # (Default)
-           max_size = 100K
-           max_size = 1024B
-
-  rsync_user=
-    Particular user for connect to remote hosts via rsync.
-
-    Examples:
-           rsync_user = backup  # (Default)
-           rsync_user = root
-
-
-[roles]
-  Section for define a list of files for include their content as a group
-  of properties (not hosts or other roles). One per line.
-  This section is not allowed inside a role file.
-  Upper in list have precedence over others, the main file located in 'd_conf'
-  which have the roles references have precedence over all.
-
-  For role files, this host configuration file format is required, but
-  it have exceptions, "[roles]" and "[hosts]" section are not available.
-
-  If starts wiht a slash '/' it refers as a full path.
-  If not starts with '/' the path will be: d_conf + 'roles/' + path
-  Its available the use of asterisk '*', interrogation '?' and ranges defined
-  into brackets [1-25] for willcard match.
-
-  Examples:
-         [roles]
-         host1.cfg
-         production[1-5].cfg
-         linux.cfg
-
-         [roles]
-         /etc/keepconf/hosts/roles/linux.cfg
-         /etc/keepconf/hosts_def/roles/host1.cfg
-         production[1-5].cfg
-
-
-[hosts]
-  Section for define the lists of hosts that will be fetched. One per line.
-  Complete dns hostnames and IP are allowed.
-  This option is not allowed inside a role files.
-  For willcard match its only available the use of ranges defined into
-  brackets [1-25]. A third argument can be passed to the range brackets
-  [1-25-2] for change the step.
-
-  Examples:
-         [hosts]
-         host1.prod
-         192.168.5.12
-         web-tier[1-10].prod.company
-
-
-[files]
-  Section for define the lists of files and paths that will be fetched.
-  One per line. Folder must ends with slash '/' character.
-  Its available the use of asterisk '*', interrogation '?' and ranges defined
-  into brackets [1-25] for willcard match.
-  Its possible to include, exclude or force paths:
-      Include - Normal line path.
-      Exclude - A '!' character must be before the path.
-      Force - Based on the behaviour of rsync and how keepconf interact with
-      it, exclude rules have precedence over includes. For force the include
-      of a path inside a exclude match, add a '&' character before the path.
-
-  Examples:
-         [files]
-         /etc/  # Include all /etc/ but not folders inside it
-         /etc/* # Include folders inside it recursively
-         /etc/apache2/sites-enabled/*.conf  # Include all files ended in conf
-         !/etc/cron.d/  # Exclude cron.d folder
-         &/etc/cron.d/myfile  # Force include inside a exclude rule match
-         /home/user1/conf[1-15]*.conf  # Get a range of files ended in conf
 
 
 ===========

@@ -51,14 +51,14 @@ echo "Clonning repository..."
 git clone https://github.com/rfrail3/keepconf.git ${F_TMP1}
 
 echo "Creating paths..."
-mkdir -p ${D_CNF}/hosts/roles
+mkdir -p ${D_CNF}/hosts
 mkdir ${D_CNF}/pre-get.d
 mkdir ${D_CNF}/post-get.d
 mkdir ${D_CNF}/pre-commit.d
 mkdir ${D_CNF}/post-commit.d
 
 echo "Copying files..."
-cp -a ${F_TMP1}/latest/* ${D_CNF}/
+cp -a ${F_TMP1}/src/* ${D_CNF}/
 mv ${D_CNF}/keepconf ${D_BIN}/keepconf
 chmod 744 ${D_BIN}/keepconf
 rm -f ${D_CNF}/pre-get.d/*.txt
