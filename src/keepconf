@@ -27,7 +27,7 @@ except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
 __version__ = '2.0.00-dev'
-__fconf__ = '/etc/keepconf/keepconf.cfg'  # default configuration file
+__config__ = '/etc/keepconf/'  # default configuration folder
 VERBOSE=0
 
 def get_arguments():
@@ -46,8 +46,8 @@ def get_arguments():
 
     parser = optparse.OptionParser()
     parser.add_option('-f', '--conf',
-                      dest='conffile',
-                      default=__fconf__,
+                      dest='config',
+                      default=__config__,
                       action='store',
                       help='configuration file',
                       metavar="FILE")
@@ -304,7 +304,7 @@ def get_files_list(c, key1, key2):
     return values
 
 
-def print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed):
+def print_stats(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, time_committed):
     print('- ')
 
     if c['fetch']:
@@ -318,11 +318,21 @@ def print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed
     if c['fetch'] or c['commit']:
         print('- Completed in: %.2f seconds' % total_time)
 
-    # + Write csv report file
-    if c['f_monitor']:
+    # + Write csv report file 
+    if c['d_monitor']:
 
-        logging.info('Writing stats to monitor file '+ str(c['f_monitor']))
-        with open(c['f_monitor'], "w"):  # clean monitor file
+        # Monitor file is destination path + name of configuration file + .csv extension
+        mon_file = str(c['d_monitor'] + os.path.splitext(os.path.basename(file_conf))[0] + '.csv')
+        logging.info('Writing stats to monitor file '+ str(mon_file))
+
+        # Check if path exists, if not, do it
+        if not os.path.isdir(c['d_monitor']):
+            logging.info('Making destination csv folder: ' + str(c['d_monitor']))
+            mkpath(c['d_monitor'])
+        else:
+            logging.info('Destination csv folder exists: ' + str(c['d_monitor']))
+
+        with open(mon_file, "w"):  # clean monitor file
             pass
         if hosts_bad:
             hosts_bad_list = ","+ ','.join(['\"'+ x +'\"' for x in hosts_bad])
@@ -332,9 +342,9 @@ def print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed
             hosts_ok_list = "," +','.join(['\"'+ x +'\"' for x in hosts_ok])
         else:
             hosts_ok_list = ''
-        with open(c['f_monitor'], "a") as file_monitor:
+        with open(mon_file, "a") as file_monitor:
             try:
-                file_monitor.write('\"CFG-FILE\",\"' + os.path.basename(options.conffile)+'\"\n')
+                file_monitor.write('\"CFG-FILE\",\"' + os.path.basename(file_conf)+'\"\n')
             except:
                 file_monitor.write('\"BadCfgFileName\"\n')
             try:
@@ -428,7 +438,7 @@ def fetch_process(c, options):
         else:
             logging.info('Destination folder exists: ' + final_path)
  
-        print('- Fetching:', host)
+        print('- Fetching host: '+ host)
 
         # ssh options for avoid annoying errors in rsync, if you need security, please remove from
         # the rsync_call "'-e', ssh_rsync_opt," or uncomment the following two "ssh_rsync_opt".
@@ -534,12 +544,14 @@ except:
 
 
 def main():
+
         # Start timer for the whole process
         start_time = time.time()
 
+        # Default values
         c = {
         'd_dest': False,
-        'f_monitor': False,
+        'd_monitor': False,
         'list_hosts': False,
         'list_files': False,
         'fetch': True,
@@ -554,86 +566,108 @@ def main():
         'post_commit': False,
         'repo': 'local'}
 
+        # Get arguments from command line
         options = get_arguments()
 
-        # - Get and parse configuration file
-        logging.info('Reading configuration file: '+ options.conffile)
-        try:
-            if not (os.path.isfile(options.conffile)):
-                raise ValueError('Invalid configuration file')
+        logging.info('Parsing configuration path: '+ options.config)
+
+        # Test if config path is a file or a folder, in that case, retrieve all .cfg files
+        if (os.path.isfile(str(options.config))):
+            logging.info('Config path is a file')
+            conf_list = (options.config,)
+        else:
+            logging.info('Config path is a folder')
+            conf_list = sorted(glob.glob(options.config + '*.cfg'))
+        logging.info('Files for process: ' + str(conf_list))
+
+        if len(conf_list) == 0:
+            logging.error('Any valid configuration files for use')
+
+        # Process each configuration file 
+        for index, file_conf in enumerate(conf_list):
+
+            # For more than one file, add separate banner
+            if index > 0:
+                print('\n-------------------------\n')
+
+            print('- Processing: '+ str(file_conf))
+            try:
+                if not (os.path.isfile(file_conf)):
+                    raise ValueError('Invalid configuration file')
+                else:
+                    parser = ConfigParser()
+                    parser.read(file_conf)
+            except ValueError as e:
+                print('ERROR reading configuration file: '+ str(file_conf) +' '+  str(e))
+                continue
+    
+            # - Get key values
+            c['d_dest'] = assign_variable(c, parser, 'main', 'd_dest')
+            c['list_hosts'] = assign_variable(c, parser, 'main', 'list_hosts')
+            c['hosts'] = []
+            c['list_files'] = assign_variable(c, parser, 'main', 'list_files')
+            c['files'] = []
+            c['d_monitor'] = assign_variable(c, parser, 'main', 'd_monitor')
+            if options.commitonly:
+                c['fetch'] = assign_variable(c, parser, 'sync', 'fetch')
             else:
-                parser = ConfigParser()
-                parser.read(options.conffile)
-        except ValueError as e:
-            sys.exit('ERROR reading configuration file: '+ str(options.conffile) +' '+  str(e))
-
-        # - Get key values
-        c['d_dest'] = assign_variable(c, parser, 'main', 'd_dest')
-        c['list_hosts'] = assign_variable(c, parser, 'main', 'list_hosts')
-        c['hosts'] = []
-        c['list_files'] = assign_variable(c, parser, 'main', 'list_files')
-        c['files'] = []
-        c['f_monitor'] = assign_variable(c, parser, 'main', 'f_monitor')
-        if options.commitonly:
-            c['fetch'] = assign_variable(c, parser, 'sync', 'fetch')
-        else:
-            c['fetch'] = False
-        c['pre_get'] = assign_variable(c, parser, 'sync', 'pre_get', normpath=True)
-        c['post_get'] = assign_variable(c, parser, 'sync', 'post_get', normpath=True)
-        c['max_size'] = assign_variable(c, parser, 'sync', 'max_size')
-        c['rsync_user'] = assign_variable(c, parser, 'sync', 'rsync_user')
-        c['rsync_opt'] = assign_variable(c, parser, 'sync', 'rsync_opt')
-        if options.commit:
-            c['commit'] = assign_variable(c, parser, 'vcs', 'commit')
-        else:
-            c['commit'] = False
-        c['pre_commit'] = assign_variable(c, parser, 'vcs', 'pre_commit', normpath=True)
-        c['post_commit'] = assign_variable(c, parser, 'vcs', 'post_commit', normpath=True)
-        c['repo'] = assign_variable(c, parser, 'vcs', 'repo')
-        c['cfg_ex'] = []
-        c['cfg_frz'] = []
-        c['cfg_in'] = []
-
-        # Check variable requirements
-        if (not options.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
-            sys.exit('ERROR: \"'+ str(c['d_dest']) +'\" is not a valid \"d_dest\" directory or is not initialized.\nPlease, try to execute \"keepconf -i\"')
-
-        # - Parse init option
-        if options.gitinit:
-            git_init(c)
-
-        # - Parse fetch (no commit) option
-        if c['fetch']:
-
-            # Start timer for fetch
-            fetch_time = time.time()
-
-            # Fetching process. Report ok and bad host list
-            hosts_ok, hosts_bad = fetch_process(c, options)
-            
-            # Register total fetch time
-            time_fetched = time.time() - fetch_time
-        else:
-            logging.info('Avoid fetching files')
-
-        # Parse commit option
-        if c['commit'] and c['repo']:
-
-            # Start timer for commit
-            commit_time = time.time()
-
-            # Commit process
-            fetch_commit(c, options, hosts_ok, hosts_bad)
-
-            # Register total commit time
-            time_committed = time.time() - commit_time
-
-        else:
-            logging.info('Avoid committing changes')
-
-        # Print stats
-        if c['fetch'] or (c['commit'] and c['repo']):
-            print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed)
+                c['fetch'] = False
+            c['pre_get'] = assign_variable(c, parser, 'sync', 'pre_get', normpath=True)
+            c['post_get'] = assign_variable(c, parser, 'sync', 'post_get', normpath=True)
+            c['max_size'] = assign_variable(c, parser, 'sync', 'max_size')
+            c['rsync_user'] = assign_variable(c, parser, 'sync', 'rsync_user')
+            c['rsync_opt'] = assign_variable(c, parser, 'sync', 'rsync_opt')
+            if options.commit:
+                c['commit'] = assign_variable(c, parser, 'vcs', 'commit')
+            else:
+                c['commit'] = False
+            c['pre_commit'] = assign_variable(c, parser, 'vcs', 'pre_commit', normpath=True)
+            c['post_commit'] = assign_variable(c, parser, 'vcs', 'post_commit', normpath=True)
+            c['repo'] = assign_variable(c, parser, 'vcs', 'repo')
+            c['cfg_ex'] = []
+            c['cfg_frz'] = []
+            c['cfg_in'] = []
+    
+            # Check variable requirements
+            if (not options.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
+                sys.exit('ERROR: \"'+ str(c['d_dest']) +'\" is not a valid \"d_dest\" directory or is not initialized.\nPlease, try to execute \"keepconf -i\"')
+    
+            # - Parse init option
+            if options.gitinit:
+                git_init(c)
+    
+            # - Parse fetch (no commit) option
+            if c['fetch']:
+    
+                # Start timer for fetch
+                fetch_time = time.time()
+    
+                # Fetching process. Report ok and bad host list
+                hosts_ok, hosts_bad = fetch_process(c, options)
+                
+                # Register total fetch time
+                time_fetched = time.time() - fetch_time
+            else:
+                logging.info('Avoid fetching files')
+    
+            # Parse commit option
+            if c['commit'] and c['repo']:
+    
+                # Start timer for commit
+                commit_time = time.time()
+    
+                # Commit process
+                fetch_commit(c, options, hosts_ok, hosts_bad)
+    
+                # Register total commit time
+                time_committed = time.time() - commit_time
+    
+            else:
+                logging.info('Avoid committing changes')
+    
+            # Print stats
+            if c['fetch'] or (c['commit'] and c['repo']):
+                print_stats(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, time_committed)
 
 if __name__ == "__main__":
     main()
