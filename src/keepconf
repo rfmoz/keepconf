@@ -356,6 +356,171 @@ def print_stats(c, hosts_ok, hosts_bad, start_time, time_fetched, time_committed
             file_monitor.write('\"TOTAL-T\",\"%.2f' % total_time + '\"\n')
 
 
+def fetch_process(c, options):
+    hosts_ok, hosts_bad = [], []
+    test_repo_dir(c['d_dest'], c['commit'])
+    print('- Fetching start')
+
+    # Get list of files with hostnames
+    c['hosts'] = get_files_list(c, 'list_hosts','hosts')
+
+    # Get list of files with filelist
+    c['files'] = get_files_list(c, 'list_files','files')
+
+    # Execute pre-get.d
+    if c['pre_get']:
+        process_folder(c['pre_get'], c['hosts'], c['d_dest'])
+
+    # Construct lists for each includes / excludes / force includes files. Clean duplicates and order
+    for fpath in c['files']:
+        if fpath.startswith('!'):
+            logging.info('Exclude: '+ fpath[1:].rstrip())
+            c['cfg_ex'].append(lpath[1:])
+        elif fpath.startswith('&'):
+            logging.info('Force Incl: ', fpath[1:].rstrip())
+            c['cfg_frz'].append(fpath[1:])
+        else:
+            logging.info('Include: '+ fpath.rstrip())
+            c['cfg_in'].append(fpath)
+    for val in ('cfg_in', 'cfg_ex', 'cfg_frz'):
+        c[val]=sorted(set(c[val]))
+
+    # Create temporary file for store the list of files and pass later to rsync
+    _, f_tmp_walk = tempfile.mkstemp()
+    f_walk = open(f_tmp_walk, 'w')
+
+    # Write into temp file each list before extract the path to the file/folder.
+    # This order of list (force>exclude>include) is a requirement for the file.
+    if c['cfg_frz']:
+        paths_lst_frz = extract_walk(c['cfg_frz'])
+        logging.info('Force paths: '+str(c['cfg_frz'])+'->'+str(paths_lst_frz))
+        for e in paths_lst_frz:
+            f_walk.write('+ ' + e + '\n')
+
+    if c['cfg_ex']:
+        paths_lst_ex = extract_walk(c['cfg_ex'], False)
+        logging.info('Exclude paths: '+str(c['cfg_ex'])+'->'+str(paths_lst_ex))
+        for e in paths_lst_ex:
+            f_walk.write('- ' + e + '\n')
+
+    if c['cfg_in']:
+        paths_lst_in = extract_walk(c['cfg_in'])
+        logging.info('Include paths: '+str(c['cfg_in'])+'->'+str(paths_lst_in))
+        for e in paths_lst_in:
+            f_walk.write('+ ' + e + '\n')
+
+    # The temp file must have always the following last line
+    f_walk.write('- *\n')
+
+    # Reset position to the beginning of the file
+    f_walk.seek(0)
+
+    # For each hostname in the list...
+    for host in c['hosts']:
+
+        # Define path name for store fetched files
+        final_path = os.path.join(c['d_dest'], host)
+
+        # Check if path exists, if not, do it
+        if not os.path.isdir(final_path):
+            logging.info('Making destination folder: ' + final_path)
+            mkpath(final_path)
+        else:
+            logging.info('Destination folder exists: ' + final_path)
+ 
+        print('- Fetching:', host)
+
+        # ssh options for avoid annoying errors in rsync, if you need security, please remove from
+        # the rsync_call "'-e', ssh_rsync_opt," or uncomment the following two "ssh_rsync_opt".
+        if VERBOSE:
+            ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null'
+            # ssh_rsync_opt='""'
+        else:
+            ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet'
+            # ssh_rsync_opt='""'
+
+        # Create rsync call. For modify it, the place is the following line:
+        rsync_call = ('rsync', '-e', ssh_rsync_opt, '-'+c['rsync_opt'], '--progress', '--delete-excluded',
+        '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+c['max_size'],
+        '--include-from=' + f_walk.name, '--prune-empty-dirs', c['rsync_user']+'@'+host+':/', final_path)
+        logging.info(' '.join(map(str,rsync_call)))
+
+        # Execute rsync and construct list with ok and bad hosts
+        sys.stdout.flush()
+        if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
+            hosts_ok.append(host)
+        else:
+            hosts_bad.append(host)
+        sys.stdout.flush()
+
+    # Close temporary file with the list of files used by rsync
+    f_walk.close()
+
+    # Don't delete file if verbose mode is enabled (for easy debug)
+    if VERBOSE:
+        logging.info('WARNING temporary files not deleted in verbose mode')
+    else:
+        os.remove(f_tmp_walk)
+
+    # Execute post-get.d
+    if c['post_get']:
+        process_folder(c['post_get'], c['hosts'], c['d_dest'])
+
+    print('- Fetching done')
+    return hosts_ok, hosts_bad
+                
+def fetch_commit(c, options, hosts_ok, hosts_bad):
+    test_repo_dir(c['d_dest'], c['commit'])
+    print('- Committing start')
+
+    # Execute pre-commit.d
+    if c['pre_commit']:
+        process_folder(c['pre_commit'], c['hosts'], c['d_dest'])
+
+    # Parse message option. Use default or custom.
+    if options.message:
+        message = 'Keepconf: ' + options.message
+    else:
+        message = 'Keepconf commit at '+time.strftime('%H:%M:%S - %A/%B/%Y')
+        if hosts_ok or hosts_bad:
+            message += '\nHosts ok: '+'['+ str(len(hosts_ok))+'] ' + ', '.join(hosts_ok)
+            message += '\nHosts bad: '+'['+ str(len(hosts_bad))+'] ' + ', '.join(hosts_bad)
+
+    # Commit files into local or remote repository
+    sys.stdout.flush()
+    if c['repo'] == 'local':
+        print('- Committing into local repository')
+        call_out(('git', 'add', c['d_dest']+'*'), options.xilent, c['d_dest'])
+        call_out(('git', 'commit', '-am', message), options.xilent, c['d_dest'])
+    else:
+        # print('- Updating remote repository')
+        # call_out(('git', 'pull'), options.xilent, cwd=c['d_dest'])
+        print('- Committing into remote repository')
+        call_out(('git', 'add', '--all'), options.xilent, c['d_dest'])
+        call_out(('git', 'commit', '-am', message), options.xilent, c['d_dest'])
+        call_out(('git', 'push'), options.xilent, c['d_dest'])
+    sys.stdout.flush()
+
+    # Execute post-commit.d
+    if c['post_commit']:
+        process_folder(c['post_commit'], c['hosts'], c['d_dest'])
+
+    print('- Committing done')
+
+def assign_variable(c, parser, section, key, normpath=False):
+    try:
+        if normpath:
+            value = os.path.normpath(sanitize(parser.get(section, key)))+os.sep
+        else:
+            value = sanitize(parser.get(section, key))
+        if value.lower() in ('false', '0', 'not'):
+            value = False
+    except:
+        value = c[key]
+    logging.info('['+section +'] '+ key +': '+ str(value))
+    return value
+
+
 #  Some test for avoid annoying errors
 try:
     call_out('rsync', True)
@@ -371,8 +536,6 @@ except:
 def main():
         # Start timer for the whole process
         start_time = time.time()
-
-        hosts_ok, hosts_bad = [], []
 
         c = {
         'd_dest': False,
@@ -404,42 +567,29 @@ def main():
         except ValueError as e:
             sys.exit('ERROR reading configuration file: '+ str(options.conffile) +' '+  str(e))
 
-        def assign_variable(c, section, key, normpath=False):
-            try:
-                if normpath:
-                    value = os.path.normpath(sanitize(parser.get(section, key)))+os.sep
-                else:
-                    value = sanitize(parser.get(section, key))
-                if value.lower() in ('false', '0', 'not'):
-                    value = False
-            except:
-                value = c[key]
-            logging.info('['+section +'] '+ key +': '+ str(value))
-            return value
-
         # - Get key values
-        c['d_dest'] = assign_variable(c, 'main', 'd_dest')
-        c['list_hosts'] = assign_variable(c, 'main', 'list_hosts')
+        c['d_dest'] = assign_variable(c, parser, 'main', 'd_dest')
+        c['list_hosts'] = assign_variable(c, parser, 'main', 'list_hosts')
         c['hosts'] = []
-        c['list_files'] = assign_variable(c, 'main', 'list_files')
+        c['list_files'] = assign_variable(c, parser, 'main', 'list_files')
         c['files'] = []
-        c['f_monitor'] = assign_variable(c, 'main', 'f_monitor')
+        c['f_monitor'] = assign_variable(c, parser, 'main', 'f_monitor')
         if options.commitonly:
-            c['fetch'] = assign_variable(c, 'sync', 'fetch')
+            c['fetch'] = assign_variable(c, parser, 'sync', 'fetch')
         else:
             c['fetch'] = False
-        c['pre_get'] = assign_variable(c, 'sync', 'pre_get', normpath=True)
-        c['post_get'] = assign_variable(c, 'sync', 'post_get', normpath=True)
-        c['max_size'] = assign_variable(c, 'sync', 'max_size')
-        c['rsync_user'] = assign_variable(c, 'sync', 'rsync_user')
-        c['rsync_opt'] = assign_variable(c, 'sync', 'rsync_opt')
+        c['pre_get'] = assign_variable(c, parser, 'sync', 'pre_get', normpath=True)
+        c['post_get'] = assign_variable(c, parser, 'sync', 'post_get', normpath=True)
+        c['max_size'] = assign_variable(c, parser, 'sync', 'max_size')
+        c['rsync_user'] = assign_variable(c, parser, 'sync', 'rsync_user')
+        c['rsync_opt'] = assign_variable(c, parser, 'sync', 'rsync_opt')
         if options.commit:
-            c['commit'] = assign_variable(c, 'vcs', 'commit')
+            c['commit'] = assign_variable(c, parser, 'vcs', 'commit')
         else:
             c['commit'] = False
-        c['pre_commit'] = assign_variable(c, 'vcs', 'pre_commit', normpath=True)
-        c['post_commit'] = assign_variable(c, 'vcs', 'post_commit', normpath=True)
-        c['repo'] = assign_variable(c, 'vcs', 'repo')
+        c['pre_commit'] = assign_variable(c, parser, 'vcs', 'pre_commit', normpath=True)
+        c['post_commit'] = assign_variable(c, parser, 'vcs', 'post_commit', normpath=True)
+        c['repo'] = assign_variable(c, parser, 'vcs', 'repo')
         c['cfg_ex'] = []
         c['cfg_frz'] = []
         c['cfg_in'] = []
@@ -458,118 +608,11 @@ def main():
             # Start timer for fetch
             fetch_time = time.time()
 
-            test_repo_dir(c['d_dest'], c['commit'])
-            print('- Fetching start')
-
-            # Get list of files with hostnames
-            c['hosts'] = get_files_list(c, 'list_hosts','hosts')
-
-            # Get list of files with filelist
-            c['files'] = get_files_list(c, 'list_files','files')
-
-            # Execute pre-get.d
-            if c['pre_get']:
-                process_folder(c['pre_get'], c['hosts'], c['d_dest'])
-
-            # Construct lists for each includes / excludes / force includes files. Clean duplicates and order
-            for fpath in c['files']:
-                if fpath.startswith('!'):
-                    logging.info('Exclude: '+ fpath[1:].rstrip())
-                    c['cfg_ex'].append(lpath[1:])
-                elif fpath.startswith('&'):
-                    logging.info('Force Incl: ', fpath[1:].rstrip())
-                    c['cfg_frz'].append(fpath[1:])
-                else:
-                    logging.info('Include: '+ fpath.rstrip())
-                    c['cfg_in'].append(fpath)
-            for val in ('cfg_in', 'cfg_ex', 'cfg_frz'):
-                c[val]=sorted(set(c[val]))
-
-            # Create temporary file for store the list of files and pass later to rsync
-            _, f_tmp_walk = tempfile.mkstemp()
-            f_walk = open(f_tmp_walk, 'w')
-
-            # Write into temp file each list before extract the path to the file/folder.
-            # This order of list (force>exclude>include) is a requirement for the file.
-            if c['cfg_frz']:
-                paths_lst_frz = extract_walk(c['cfg_frz'])
-                logging.info('Force paths: '+str(c['cfg_frz'])+'->'+str(paths_lst_frz))
-                for e in paths_lst_frz:
-                    f_walk.write('+ ' + e + '\n')
-
-            if c['cfg_ex']:
-                paths_lst_ex = extract_walk(c['cfg_ex'], False)
-                logging.info('Exclude paths: '+str(c['cfg_ex'])+'->'+str(paths_lst_ex))
-                for e in paths_lst_ex:
-                    f_walk.write('- ' + e + '\n')
-
-            if c['cfg_in']:
-                paths_lst_in = extract_walk(c['cfg_in'])
-                logging.info('Include paths: '+str(c['cfg_in'])+'->'+str(paths_lst_in))
-                for e in paths_lst_in:
-                    f_walk.write('+ ' + e + '\n')
-
-            # The temp file must have always the following last line
-            f_walk.write('- *\n')
-
-            # Reset position to the beginning of the file
-            f_walk.seek(0)
-
-            # For each hostname in the list...
-            for host in c['hosts']:
-
-                # Define path name for store fetched files
-                final_path = os.path.join(c['d_dest'], host)
-
-                # Check if path exists, if not, do it
-                if not os.path.isdir(final_path):
-                    logging.info('Making destination folder: ' + final_path)
-                    mkpath(final_path)
-                else:
-                    logging.info('Destination folder exists: ' + final_path)
- 
-                print('- Fetching:', host)
-
-                # ssh options for avoid annoying errors in rsync, if you need security, please remove from
-                # the rsync_call "'-e', ssh_rsync_opt," or uncomment the following two "ssh_rsync_opt".
-                if VERBOSE:
-                    ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null'
-                    # ssh_rsync_opt='""'
-                else:
-                    ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet'
-                    # ssh_rsync_opt='""'
-
-                # Create rsync call. For modify it, the place is the following line:
-                rsync_call = ('rsync', '-e', ssh_rsync_opt, '-'+c['rsync_opt'], '--progress', '--delete-excluded',
-                '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+c['max_size'],
-                '--include-from=' + f_walk.name, '--prune-empty-dirs', c['rsync_user']+'@'+host+':/', final_path)
-                logging.info(' '.join(map(str,rsync_call)))
-
-                # Execute rsync and construct list with ok and bad hosts
-                sys.stdout.flush()
-                if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
-                    hosts_ok.append(host)
-                else:
-                    hosts_bad.append(host)
-                sys.stdout.flush()
-
-            # Close temporary file with the list of files used by rsync
-            f_walk.close()
-
-            # Don't delete file if verbose mode is enabled (for easy debug)
-            if VERBOSE:
-                logging.info('WARNING temporary files not deleted in verbose mode')
-            else:
-                os.remove(f_tmp_walk)
-
-            # Execute post-get.d
-            if c['post_get']:
-                process_folder(c['post_get'], c['hosts'], c['d_dest'])
-
+            # Fetching process. Report ok and bad host list
+            hosts_ok, hosts_bad = fetch_process(c, options)
+            
             # Register total fetch time
             time_fetched = time.time() - fetch_time
-
-            print('- Fetching done')
         else:
             logging.info('Avoid fetching files')
 
@@ -579,45 +622,12 @@ def main():
             # Start timer for commit
             commit_time = time.time()
 
-            test_repo_dir(c['d_dest'], c['commit'])
-            print('- Committing start')
-
-            # Execute pre-commit.d
-            if c['pre_commit']:
-                process_folder(c['pre_commit'], c['hosts'], c['d_dest'])
-
-            # Parse message option. Use default or custom.
-            if options.message:
-                message = 'Keepconf: ' + options.message
-            else:
-                message = 'Keepconf commit at '+time.strftime('%H:%M:%S - %A/%B/%Y')
-                if hosts_ok or hosts_bad:
-                    message += '\nHosts ok: '+'['+ str(len(hosts_ok))+'] ' + ', '.join(hosts_ok)
-                    message += '\nHosts bad: '+'['+ str(len(hosts_bad))+'] ' + ', '.join(hosts_bad)
-
-            # Commit files into local or remote repository
-            sys.stdout.flush()
-            if c['repo'] == 'local':
-                print('- Committing into local repository')
-                call_out(('git', 'add', c['d_dest']+'*'), options.xilent, c['d_dest'])
-                call_out(('git', 'commit', '-am', message), options.xilent, c['d_dest'])
-            else:
-                # print('- Updating remote repository')
-                # call_out(('git', 'pull'), options.xilent, cwd=c['d_dest'])
-                print('- Committing into remote repository')
-                call_out(('git', 'add', '--all'), options.xilent, c['d_dest'])
-                call_out(('git', 'commit', '-am', message), options.xilent, c['d_dest'])
-                call_out(('git', 'push'), options.xilent, c['d_dest'])
-            sys.stdout.flush()
-
-            # Execute post-commit.d
-            if c['post_commit']:
-                process_folder(c['post_commit'], c['hosts'], c['d_dest'])
+            # Commit process
+            fetch_commit(c, options, hosts_ok, hosts_bad)
 
             # Register total commit time
             time_committed = time.time() - commit_time
 
-            print('- Committing done')
         else:
             logging.info('Avoid committing changes')
 
