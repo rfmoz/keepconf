@@ -2,7 +2,7 @@
 
 # Removing binary files before commit them into repository
 #
-# receive a call: name-of-the-script arg1=D_Conf arg2=D_Dest
+# receive a call: name-of-the-script arg1=list_of_hosts arg2=d_dest
 
 #echo $1 # Argument 1
 #echo $2 # Argument 2
@@ -10,7 +10,9 @@
 # Uncomment following "exit" line for avoid executing this file
 #exit
 
-D_CONF=$1
+echo -e "  Script -> Removing binary files"
+
+HOSTS=$1
 D_DEST=$2
 
 F_TEMP1=`mktemp`
