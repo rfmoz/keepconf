@@ -51,7 +51,7 @@ In the remote hosts, only rsync and a ssh client.
 There are only a few command line options :
 
     -h, --help            show this help message and exit
-    -f FILE, --conf=FILE  configuration file/folder path
+    -f PATH, --conf=PATH  configuration file/folder path
     -i, --init            initialize git repostory
     -n, --nocommit        avoid commit changes
     -c, --commitonly      only commit changes
@@ -71,7 +71,7 @@ There are only a few command line options :
          keepconf --help
 
 
--f <FILE>, --conf=<FILE>
+-f <PATH>, --conf=<PATH>
   Define the configuration file or path to use. If it is a folder, each file
   inside it with .cfg extension will be parsed, wich is good if you want to separate
   hosts by different enviroments with different properties.
