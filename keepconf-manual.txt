@@ -28,9 +28,8 @@ uses rsync and git for the purpouse. Indeed, it can:
 
 Almost these version of the following software:
 
-   python 3 with this modules:
-      sys, optparse, os, glob, time, string, re, configparser,
-      tempfile, subprocess, distutils
+   python 3 with this modules (included in python core by default):
+      sys, optparse, os, glob, time, string, re, configparser, tempfile, subprocess, distutils
    rsync 3.0
    git 1.7
 
