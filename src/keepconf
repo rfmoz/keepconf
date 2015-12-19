@@ -26,7 +26,7 @@ except Exception as e:
     sys.exit('ERROR modules not imported correctly: ' + str(e))
 
 __version__ = '2.0.00-dev'
-__config__ = '/etc/keepconf/'  # default configuration folder
+__config__ = '/etc/keepconf/'  # default configuration path
 VERBOSE=0
 
 def get_arguments():
@@ -48,7 +48,7 @@ def get_arguments():
         dest='config',
         default=__config__,
         action='store',
-        help='configuration file',
+        help='configuration path',
         metavar="FILE")
     parser.add_option('-i', '--init',
         dest='gitinit',
@@ -219,22 +219,40 @@ def call_out(call_, silent_=None, cwd_='/tmp'):
 
 def extract_walk(cfg_in_, walking=True):
     """Deconstruct path, extract elements"""
+    # For store list to return
     paths_lst = []
-    for g in cfg_in_:  # for each line in the list of files/paths
+
+    # For each element in the list of files/paths
+    for g in cfg_in_:
+
+        # For store path walk
         walk_lst = []
+
+        # In some cases walking is not needed (for exclude files/paths)
         if walking:
+
+            # Extract from path everything except the last pathname component and last '/'
             head, _ = os.path.split(g)
+
+            # For each element separated by '/' add it to the list
             walk_path = ''
-            for t in head.split('/'):  # extract, deconstruct, route path
+            for t in head.split('/'):
                 walk_path += t + '/'
                 walk_lst.append(walk_path)
+
         # For a comprensive behaviour than rsync do alone, add an asterisk
         # to the paths that ends in a slash or slash and asterisk
         if g.endswith('/') or g.endswith('/*'):
             logging.info('Adding * to: ' + str(g))
             g += '*'
-        walk_lst.append(g)  # add origin path after its deconstructed route
-        paths_lst += walk_lst  # add processed path to the total amount
+
+        # Add origin path after its deconstructed route
+        walk_lst.append(g)
+
+        # Add processed path to the total amount
+        paths_lst += walk_lst
+
+    # Return sorted list
     return sorted(paths_lst)
 
 
