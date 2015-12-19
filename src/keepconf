@@ -574,9 +574,6 @@ def assign_variable(c, parser, section, key, normpath=False):
 def main():
     """main entry point, manage behaviour based on configuration"""
 
-    # Start timer for the whole process
-    start_time = time.time()
-
     # Default values
     c = {
         'd_dest': False,
@@ -615,6 +612,15 @@ def main():
 
     # Process each configuration file
     for index, file_conf in enumerate(conf_list):
+
+        # Start timer for the whole process
+        start_time = time.time()
+        time_fetched = ''
+        time_committed = ''
+
+        # Set empty values for hosts
+        hosts_ok = ''
+        hosts_bad = ''
 
         # For more than one file, add separate banner
         if index > 0:
