@@ -188,7 +188,7 @@ def expand_range(line=None):
 def sanitize(text_value):
     """Remove especial characters"""
     # Excluded characters
-    excluded = "[\'\"\;\|\<\>]"
+    excluded = "[\'\";|<>]"
 
     # Remove excluded characters and clean line
     resultd = re.sub(excluded, '', ((text_value.split('#', 1)[0].split(';', 1)[0]).strip()))
@@ -420,7 +420,7 @@ def fetch_process(c, options):
             logging.info('Exclude: '+ fpath[1:].rstrip())
             c['cfg_ex'].append(fpath[1:])
         elif fpath.startswith('&'):
-            logging.info('Force Incl: ', fpath[1:].rstrip())
+            logging.info('Force Incl: '+ fpath[1:].rstrip())
             c['cfg_frz'].append(fpath[1:])
         else:
             logging.info('Include: '+ fpath.rstrip())
