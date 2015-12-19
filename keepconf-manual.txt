@@ -29,8 +29,8 @@ uses rsync and git for the purpouse. Indeed, it can:
 Almost these version of the following software:
 
    python 3 with this modules:
-      sys, optparse, os, glob, time, string, re, ConfigParser,
-      tempfile, subprocess, distutils, collections
+      sys, optparse, os, glob, time, string, re, configparser,
+      tempfile, subprocess, distutils
    rsync 3.0
    git 1.7
 
@@ -44,6 +44,7 @@ Some free space for store the remote files.
 
 In the remote hosts, only rsync and a ssh client.
 
+
 ============================
 | Command line  parameters |
 ============================
@@ -51,7 +52,7 @@ In the remote hosts, only rsync and a ssh client.
 There are only a few command line options :
 
     -h, --help            show this help message and exit
-    -f FILE, --conf=FILE  configuration file
+    -f FILE, --conf=FILE  configuration file/folder path
     -i, --init            initialize git repostory
     -n, --nocommit        avoid commit changes
     -c, --commitonly      only commit changes
@@ -72,12 +73,15 @@ There are only a few command line options :
 
 
 -f <FILE>, --conf=<FILE>
-  Define the configuration file for use.
+  Define the configuration file or path to use. If it is a folder, each file
+  inside it with .cfg extension will be parsed, wich is good if you want to separate
+  hosts by different enviroments with different properties.
 
   Examples:
-         keepconf -f /etc/keepconf/keepconf.conf  # (Default)
-         keepconf -f /etc/keepconf/keepconf-client1.conf
-         keepconf --conf /home/user1/myservers/production.conf
+         keepconf -f /etc/keepconf/  # (Default)(Each .cfg file will be parsed)
+         keepconf -f /etc/keepconf/keepconf.cfg 
+         keepconf -f /etc/keepconf/keepconf-client1.cfg
+         keepconf --conf /home/user1/myservers/production.cfg
 
 
 -i, --init
@@ -173,8 +177,8 @@ of them.
     is ignored. 
 
     Example:
-          list_hosts = /etc/keepconf/servers/hosts_prod.txt
-          list_hosts = /etc/mydir/hosts_prod.txt, /etc/mydir/hosts_dev.txt
+          list_hosts = /etc/keepconf/servers/hosts_prod.lst
+          list_hosts = /etc/mydir/hosts_prod.lst, /etc/mydir/hosts_dev.lst
 
   list_files=
     Path to file or comma separated list of files with the list fo files to
@@ -182,8 +186,8 @@ of them.
     is ignored. 
 
     Example:
-          list_files = /etc/keepconf/servers/files_default.txt
-          list_files = /etc/mydir/files_default.txt, /etc/mydir/files_env1.txt
+          list_files = /etc/keepconf/servers/files_default.lst
+          list_files = /etc/mydir/files_default.lst, /etc/mydir/files_env1.lst
 
   d_dest=
     Directory for store the remote files and locate the repository. It is a
@@ -195,12 +199,13 @@ of them.
     Example:
            d_dest = /var/keepconf/hosts/
 
-  f_monitor=
-    File for store the reports of execution. It is in csv format.
+  d_monitor=
+    Directory for store the .csv reports of execution. The name of the files is
+    the same that the configuration files except the extension.
 
     Examples:
-           f_monitor = /var/tmp/keepconf-mon.csv
-           f_monitor = False  # (Default)
+           d_monitor = /var/tmp/keepconf/
+           d_monitor = False  # (Default)
 
 
 [sync]
@@ -309,8 +314,7 @@ executed in diferent stages of the flow:
 pre-get -> fetch files -> post-get -> pre-commit -> commit -> post-commit
 
 Two arguments are passed to each file when its executed, first is a comma 
-separated list with the list of hosts applicable and second is "d_dest" 
-variable.
+separated list with the hosts applicable and second is "d_dest" variable.
 
 The definition of the directory must be a complete route starting from the
 root path.
@@ -384,4 +388,3 @@ and UserKnownHostsFile=/dev/null are passed for avoid annoying startup issues.
 
 If you found any bugs, please report it with all information as you can
 (a verbose output its helpfull). Thanks.
-

@@ -16,18 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-    import sys, optparse, os, glob, time, string, re, tempfile, logging
-    from configparser import ConfigParser
-    from subprocess import call
-    from distutils.util import strtobool
-    from distutils.dir_util import mkpath
-except Exception as e:
-    sys.exit('ERROR modules not imported correctly: ' + str(e))
+import sys, optparse, os, glob, time, string, re, tempfile, logging
+from configparser import ConfigParser
+from subprocess import call
+from distutils.util import strtobool
+from distutils.dir_util import mkpath
 
 __version__ = '2.0.00-dev'
 __config__ = '/etc/keepconf/'  # default configuration path
-VERBOSE=0
+VERBOSE = 0
 
 def get_arguments():
     """Get arguments from command line"""
@@ -41,54 +38,54 @@ def get_arguments():
         """Enable verbose mode"""
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
         global VERBOSE
-        VERBOSE=1
+        VERBOSE = 1
 
     parser = optparse.OptionParser()
     parser.add_option('-f', '--conf',
-        dest='config',
-        default=__config__,
-        action='store',
-        help='configuration path',
-        metavar="FILE")
+                      dest='config',
+                      default=__config__,
+                      action='store',
+                      help='configuration file/folder path',
+                      metavar="PATH")
     parser.add_option('-i', '--init',
-        dest='gitinit',
-        default=False,
-        action='store_true',
-        help='initialize git repostory')
+                      dest='gitinit',
+                      default=False,
+                      action='store_true',
+                      help='initialize git repostory')
     parser.add_option('-n', '--nocommit',
-        dest='commit',
-        default=True,
-        action='store_false',
-        help='avoid commit changes')
+                      dest='commit',
+                      default=True,
+                      action='store_false',
+                      help='avoid commit changes')
     parser.add_option('-c', '--commitonly',
-        dest='commitonly',
-        default=True,
-        action='store_false',
-        help='only commit changes')
+                      dest='commitonly',
+                      default=True,
+                      action='store_false',
+                      help='only commit changes')
     parser.add_option('-m', '--message',
-        dest='message',
-        default=False,
-        action='store',
-        help='commit message',
-        metavar="TEXT")
+                      dest='message',
+                      default=False,
+                      action='store',
+                      help='commit message',
+                      metavar="TEXT")
     parser.add_option('-s', '--silent',
-        dest='silent',
-        default=False,
-        action='store_true',
-        help='silent fetching output')
+                      dest='silent',
+                      default=False,
+                      action='store_true',
+                      help='silent fetching output')
     parser.add_option('-x', '--xilent',
-        dest='xilent',
-        default=False,
-        action='store_true',
-        help='silent commit output')
+                      dest='xilent',
+                      default=False,
+                      action='store_true',
+                      help='silent commit output')
     parser.add_option('-v', '--verbose',
-        action='callback',
-        callback=enable_verbose,
-        help='verbose output')
+                      action='callback',
+                      callback=enable_verbose,
+                      help='verbose output')
     parser.add_option('-V', '--version',
-        action='callback',
-        callback=print_version,
-        help='show version')
+                      action='callback',
+                      callback=print_version,
+                      help='show version')
     options, _ = parser.parse_args()
 
     return options
@@ -152,7 +149,6 @@ def expand_range(line=None):
         bounds = nrange.split("-")
         if len(bounds) != 2 and len(bounds) != 3:
             print("WARNING: Range incorrectly specified")
-            raise
         beg = bounds[0]
         end = bounds[1]
         if len(bounds) == 2:
@@ -163,12 +159,10 @@ def expand_range(line=None):
             beg = "0"
         if not end:
             print("WARNING: Range end value missing")
-            raise
         if beg[0] == '0' and len(beg) > 1:
             rlen = len(beg)  # range length formatting hint
             if rlen != len(end):
                 print("WARNING: Range format incorrectly specified")
-                raise
             fill = lambda _: str(_).zfill(rlen)  # range sequence
         else:
             fill = str
@@ -178,7 +172,6 @@ def expand_range(line=None):
             i_end = string.ascii_letters.index(end)
             if i_beg > i_end:
                 print("WARNING: Range format invalid")
-                raise
             seq = string.ascii_letters[i_beg:i_end+1]
         except ValueError:  # not an alpha range
             seq = range(int(beg), int(end)+1, int(step))
@@ -203,18 +196,14 @@ def sanitize(text_value):
         return resultd
     else:
         logging.info('excluded by sanitize: '+ text_value.strip())
-        raise
 
 
 def call_out(call_, silent_=None, cwd_='/tmp'):
     """Execute external program and redirect stdout and stderr to null if is needed"""
-    try:
-        if silent_:
-            return call(call_, cwd=cwd_, stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'))
-        else:
-            return call(call_, cwd=cwd_)
-    except Exception as e:
-        sys.exit('ERROR: executing external call '+ call_ +' '+ silent_ +' '+ cwd_ +' '+ e )
+    if silent_:
+        return call(call_, cwd=cwd_, stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'))
+    else:
+        return call(call_, cwd=cwd_)
 
 
 def extract_walk(cfg_in_, walking=True):
@@ -267,7 +256,7 @@ def git_init(c):
 
     # Local repository
     if c['repo'] == 'local':
-        if os.path.isdir(os.path.join(c['d_dest'],'.git')):
+        if os.path.isdir(os.path.join(c['d_dest'], '.git')):
             print('WARNING: A .git folder exists inside '+ c['d_dest'] +' directory!')
             if not yes_or_not('Do you want to initialize an exiting repository?'):
                 logging.info('Avoid initializating folder with .git directory')
@@ -312,7 +301,7 @@ def get_files_list(c, key1, key2):
             logging.info('Reading '+ key2 +' file: '+ file_var)
 
             # Test if if a file and open it
-            if(os.path.isfile(file_var)):
+            if os.path.isfile(file_var):
                 with open(file_var) as f:
 
                     # Read lines and expand range if is the case
@@ -352,7 +341,7 @@ def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, t
     if c['fetch'] or c['commit']:
         print('- Completed in: %.2f seconds' % total_time)
 
-    # Generate and write csv report file 
+    # Generate and write csv report file
     if c['d_monitor']:
 
         # Monitor file is destination path + name of configuration with replaced extension to .csv
@@ -416,10 +405,10 @@ def fetch_process(c, options):
     print('- Fetching start')
 
     # Get list of files with hostnames
-    c['hosts'] = get_files_list(c, 'list_hosts','hosts')
+    c['hosts'] = get_files_list(c, 'list_hosts', 'hosts')
 
     # Get list of files with filelist
-    c['files'] = get_files_list(c, 'list_files','files')
+    c['files'] = get_files_list(c, 'list_files', 'files')
 
     # Execute pre-get.d
     if c['pre_get']:
@@ -437,7 +426,7 @@ def fetch_process(c, options):
             logging.info('Include: '+ fpath.rstrip())
             c['cfg_in'].append(fpath)
     for val in ('cfg_in', 'cfg_ex', 'cfg_frz'):
-        c[val]=sorted(set(c[val]))
+        c[val] = sorted(set(c[val]))
 
     # Create temporary file for store the list of files and pass later to rsync
     _, f_tmp_walk = tempfile.mkstemp()
@@ -481,23 +470,23 @@ def fetch_process(c, options):
             mkpath(final_path)
         else:
             logging.info('Destination folder exists: ' + final_path)
- 
+
         print('- Fetching host: '+ host)
 
         # ssh options for avoid annoying errors in rsync, if you need security, please remove from
         # the rsync_call "'-e', ssh_rsync_opt," or uncomment the following two "ssh_rsync_opt".
         if VERBOSE:
-            ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null'
-            # ssh_rsync_opt='""'
+            ssh_rsync_opt = 'ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null'
+            # ssh_rsync_opt = '""'
         else:
-            ssh_rsync_opt='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet'
-            # ssh_rsync_opt='""'
+            ssh_rsync_opt = 'ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet'
+            # ssh_rsync_opt = '""'
 
         # Create rsync call. For modify it, the place is the following line:
         rsync_call = ('rsync', '-e', ssh_rsync_opt, '-'+c['rsync_opt'], '--progress', '--delete-excluded',
-        '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+c['max_size'],
-        '--include-from=' + f_walk.name, '--prune-empty-dirs', c['rsync_user']+'@'+host+':/', final_path)
-        logging.info(' '.join(map(str,rsync_call)))
+                      '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+c['max_size'],
+                      '--include-from=' + f_walk.name, '--prune-empty-dirs', c['rsync_user']+'@'+host+':/', final_path)
+        logging.info(' '.join(map(str, rsync_call)))
 
         # Execute rsync and construct list with ok and bad hosts
         sys.stdout.flush()
@@ -522,9 +511,11 @@ def fetch_process(c, options):
 
     print('- Fetching done')
     return hosts_ok, hosts_bad
-                
+
 
 def fetch_commit(c, options, hosts_ok, hosts_bad):
+    ''' Commit files fetched'''
+
     test_repo_dir(c['d_dest'], c['commit'])
     print('- Committing start')
 
@@ -588,21 +579,21 @@ def main():
 
     # Default values
     c = {
-    'd_dest': False,
-    'd_monitor': False,
-    'list_hosts': False,
-    'list_files': False,
-    'fetch': True,
-    'pre_get': False,
-    'post_get': False,
-    'max_size': '25M',
-    'rsync_user': 'backup',
-    'rsync_timeout': '5',
-    'rsync_opt': 'arHvzL',
-    'commit': True,
-    'pre_commit': False,
-    'post_commit': False,
-    'repo': 'local'}
+        'd_dest': False,
+        'd_monitor': False,
+        'list_hosts': False,
+        'list_files': False,
+        'fetch': True,
+        'pre_get': False,
+        'post_get': False,
+        'max_size': '25M',
+        'rsync_user': 'backup',
+        'rsync_timeout': '5',
+        'rsync_opt': 'arHvzL',
+        'commit': True,
+        'pre_commit': False,
+        'post_commit': False,
+        'repo': 'local'}
 
     # Get arguments from command line
     options = get_arguments()
@@ -610,7 +601,7 @@ def main():
     logging.info('Parsing configuration path: '+ options.config)
 
     # Test if config path is a file or a folder, in that case, retrieve all .cfg files
-    if (os.path.isfile(str(options.config))):
+    if os.path.isfile(str(options.config)):
         logging.info('Config path is a file')
         conf_list = (options.config,)
     else:
@@ -622,7 +613,7 @@ def main():
     if len(conf_list) == 0:
         logging.error('Any valid configuration files for use')
 
-    # Process each configuration file 
+    # Process each configuration file
     for index, file_conf in enumerate(conf_list):
 
         # For more than one file, add separate banner
@@ -678,7 +669,7 @@ def main():
 
             # Fetching process. Report ok and bad host list
             hosts_ok, hosts_bad = fetch_process(c, options)
-            
+
             # Register total fetch time
             time_fetched = time.time() - fetch_time
 
