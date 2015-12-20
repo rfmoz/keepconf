@@ -33,10 +33,10 @@ else
 		echo "ERROR: Its needed Python version 3, not ${pyver}"
 		exit 1
 	else
-                pymod=`python3 -c "import sys, optparse, os, glob, time, string, re, tempfile, logging configparser subprocess distutils"`
+                pymod=`python3 -c "import sys, optparse, os, glob, time, string, re, tempfile, logging, configparser, subprocess, distutils"`
                 if [ $? -ne 0 ]; then
                         echo "ERROR: Please, ensure that these Python modules are available in the local system:"
-                        echo "sys, optparse, os, glob, time, string, re, tempfile, logging configparser subprocess distutils"
+                        echo "sys, optparse, os, glob, time, string, re, tempfile, logging, configparser, subprocess, distutils"
                 fi
 	fi
 fi
