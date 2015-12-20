@@ -1,0 +1,30 @@
+keepconf (2.0.0) stable; urgency=low
+
+  * Allow multiple configuration files.
+  * Adding support for one .csv report per configuration file.
+  * Adding "list_hosts" and "list_files" properties.
+  * Remove use of roles.
+  * Remove "d_conf" variable.
+  * Using logging module for verbose mode.
+  * Refactoring code.
+
+ -- Ricardo F. <rfrail3@yahoo.es>  Wed, 26 Aug 2015 14:46:18 +0200
+
+keepconf (1.2.10) stable; urgency=low
+
+  * Auto add 'roles/' dir to 'd_dest' variable in roles dir path.
+  * Improve verbose report for invalid roles files.
+
+ -- Ricardo F. <rfrail3@yahoo.es>  Wed, 26 Aug 2015 14:46:18 +0200
+
+keepconf (1.2.0) stable; urgency=low
+
+  * Update roles verbose and remove roles_dir option.
+
+ -- Ricardo F. <rfrail3@yahoo.es>  Fri, 20 Jul 2015 14:46:18 +0200
+
+keepconf (1.0.0) stable; urgency=low
+
+  * First release.
+
+ -- Ricardo F. <rfrail3@yahoo.es>  Fri, 10 Apr 2015 14:46:18 +0200
