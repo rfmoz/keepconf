@@ -29,12 +29,8 @@ Initialize the folders and repository:
 
         keepconf -i
 
-Make a simple file for backup some paths of the local host, take care of the tabs and spaces at the beginning of each line, dont add any of them:
-
-        echo 'localhost' > /etc/keepconf/hosts/hosts.txt
-        echo '/etc/resolv.conf' > /etc/keepconf/hosts/files.txt
-
-Finally, launch the command and see the process:
+A sample files are located inside "/etc/keepconf/hosts" and "/etc/keepconf/files" for backup all "/etc/*" content in "localhost" plus some commented examples.
+Run the command for backup them:
 
         keepconf
 
