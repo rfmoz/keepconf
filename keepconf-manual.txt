@@ -176,7 +176,7 @@ of them.
     is ignored. 
 
     Example:
-          list_hosts = /etc/keepconf/servers/hosts_prod.lst
+          list_hosts = /etc/keepconf/hosts/hosts_prod.lst
           list_hosts = /etc/mydir/hosts_prod.lst, /etc/mydir/hosts_dev.lst
 
   list_files=
@@ -185,7 +185,7 @@ of them.
     is ignored. 
 
     Example:
-          list_files = /etc/keepconf/servers/files_default.lst
+          list_files = /etc/keepconf/hosts/files_default.lst
           list_files = /etc/mydir/files_default.lst, /etc/mydir/files_env1.lst
 
   d_dest=

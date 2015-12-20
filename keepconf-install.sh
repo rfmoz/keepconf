@@ -52,16 +52,18 @@ echo "Clonning repository..."
 git clone https://github.com/rfrail3/keepconf.git ${F_TMP1}
 
 echo "Creating paths..."
-mkdir -p ${D_CNF}/servers
+mkdir -p ${D_CNF}/hosts
 mkdir ${D_CNF}/pre-get.d
 mkdir ${D_CNF}/post-get.d
 mkdir ${D_CNF}/pre-commit.d
 mkdir ${D_CNF}/post-commit.d
 
 echo "Copying files..."
-cp -a ${F_TMP1}/src/post-get.d/01-remove-binary ${D_CNF}/src/post-get.d/
-chmod 644 ${D_CNF}/src/post-get.d/01-remove-binary
-mv ${D_CNF}/keepconf ${D_BIN}/keepconf
+cp ${F_TMP1}/src/keepconf.cfg ${D_CNF}/
+cp -ar ${F_TMP1}/src/hosts/* ${D_CNF}/hosts/
+cp ${F_TMP1}/src/post-get.d/01-remove-binary ${D_CNF}/post-get.d/
+chmod 744 ${D_CNF}/post-get.d/01-remove-binary
+cp ${F_TMP1}/src/keepconf ${D_BIN}/keepconf
 chmod 744 ${D_BIN}/keepconf
 
 cd ${D_CNF} && ls
