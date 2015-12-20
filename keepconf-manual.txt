@@ -311,6 +311,8 @@ Anything following a sharp ('#') a semicolon (';') or a comma (',') is ignored.
 Space character is allowed, but if is possible, avoid it use. Take care of the
 tabs and spaces at the beginning of each line, dont add any of them.
 
+For the files, any extension is valid, .lst .txt etc...
+
 "list_hosts"
   One host per line.
 

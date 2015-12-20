@@ -3,7 +3,7 @@
                                 Hands On
                          ----------------------
                                Ricardo F.
-                              04/August/2015
+                            20/December/2015
 
 
 
@@ -14,7 +14,7 @@
 4.- Keepconf configuration, for backup storage host
 5.- Keepconf case, adding new host
 6.- Keepconf case, removing old host
-7.- Keepconf case, using roles
+7.- Keepconf case, using two configuration files
 
 
 
@@ -93,9 +93,7 @@ Prerequisites:
  - ssh client
  - rsync > 3.0
  - git > 1.7
- - python 2.7 with this modules:
-     sys, optparse, os, glob, time, string, re, ConfigParser,
-     tempfile, subprocess, distutils, collections
+ - python 3
  - keepconf, latest release.
  - a user, in this case "root" will launch the backup.
 
@@ -148,11 +146,13 @@ root@backups:~# vi /etc/keepconf/keepconf.cfg
 root@backups:~# rm -rf /etc/keepconf/hosts/*
 
 
-+ Create a file called "/etc/keepconf/hosts/web-servers.cfg" and add the following example lines:
++ Create a file called "/etc/keepconf/hosts/web-servers.lst" and add the following example lines:
 
-[hosts]
 web1.example.com
-[files]
+
+
++ Create a file called "/etc/keepconf/files/web-files.lst" and add the following example lines:
+
 /etc/passwd
 /var/lib/dpkg/status
 
@@ -160,9 +160,9 @@ web1.example.com
 + Run it! (In this example, with "-s" for reduce output): 
 
 root@backups:~# keepconf -s
+- Processing: /etc/keepconf/keepconf.cfg
 - Fetching start
-- Processing: /etc/keepconf/hosts/web-servers.cfg
-- Fetching: web1.example.com
+- Fetching host: web1.example.com
 - Finding files in /etc/keepconf/post-get.d/
 - Processing: /etc/keepconf/post-get.d/01-remove-binary
 - Fetching done
@@ -225,31 +225,19 @@ root@backups:~# vi /etc/cron.d/keepconf
 | 5.- Keepconf case | Adding new host | 
 =====================------------------
 
-+ Configure "web2" as described in section 2.- Ssh configuration, for any host to backup.
++ Configure "web2" as described in section "2.- Ssh configuration, For any host to backup."
 
-+ Add the new host to the configuration file, in this case "web2" to "/etc/keepconf/hosts/web-servers.cfg":
++ Add the new host to the configuration file, in this case "web2" to "/etc/keepconf/hosts/web-servers.lst":
 
   Previous state:
-    [hosts]
     web1.example.com
-    [files]
-    /etc/passwd
-    /var/lib/dpkg/status
 
   Posterior state, option with full name:
-    [hosts]
     web1.example.com
     web2.example.com
-    [files]
-    /etc/passwd
-    /var/lib/dpkg/status
 
   Posterior state, option using wildcard:
-    [hosts]
     web[1-2].example.com
-    [files]
-    /etc/passwd
-    /var/lib/dpkg/status
 
 
 + Execute keepconf normally, and check that "web2" is fetched:
@@ -283,22 +271,14 @@ Date:   Tue Aug 5 12:22:01 2015 +0200
 =====================--------------------
 
 
-+ Remove the host from the configuration file, in this case "web2" from "/etc/keepconf/hosts/web-servers.cfg": 
++ Remove the host from the configuration file, in this case "web2" from "/etc/keepconf/hosts/web-servers.lst": 
 
   Previous state:
-    [hosts]
     web1.example.com
     web2.example.com
-    [files]
-    /etc/passwd
-    /var/lib/dpkg/status
 
   Posterior state:
-    [hosts]
     web1.example.com
-    [files]
-    /etc/passwd
-    /var/lib/dpkg/status
 
 
 + Remove the fetched files from the repo directory "/var/keepconf/hosts/":
@@ -323,33 +303,15 @@ Date:   Thu Aug 6 10:19:50 2015 +0200
 
 
 
-=====================--------------
-| 7.- Keepconf case | Using roles | 
-=====================--------------
+=====================--------------------------------
+| 7.- Keepconf case | Using two configuration files | 
+=====================--------------------------------
 
 
-+ Set the file "/etc/keepconf/hosts/web-servers.cfg" as follows: 
+Is it possible to have more than one configuration file, for example, each one for one enviroment.
 
-    [roles]
-    roles/linux-base.cfg
-    [hosts]
-    web1.example.com
-    web2.example.com
-    [files]
-    /etc/apache2/*
-    /var/www/web/mydocs/*
++ Copy default configuration file to the same folder with an other name:
 
+root@backups:~# cp /etc/keepconf/keepconf.cfg /etc/keepconf/keepconf-dev.cfg
 
-+ Create the new folder for roles and the new file with the following content. As noted, the path start without slash character and for that reason, "d_conf" + 'roles/' is adeed before.
-
-root@backups:/var/keepconf/hosts/# mkdir roles && cd roles
-root@backups:/var/keepconf/hosts/roles/# vi linux-base.cfg
-
-    [main]
-    max_size = 25M  # max file limit
-    [files]
-    /etc/passwd
-    /var/lib/dpkg/status
-
-
-+ Execute keepconf, now the "linux-base.cfg" files will be fetched and a global limit of 25Mb will be applied to all files.
++ Change whatever you consider and run "keepconf" again. Both files will be parsed and process.

@@ -29,7 +29,7 @@ Initialize the folders and repository:
 
         keepconf -i
 
-A sample files are located inside "/etc/keepconf/hosts" and "/etc/keepconf/files" for backup all "/etc/*" content in "localhost" plus some commented examples.
+Some sample files are located inside "/etc/keepconf/hosts" and "/etc/keepconf/files" for backup all "/etc/*" content in "localhost" plus some commented examples.
 Run the command for backup them:
 
         keepconf
