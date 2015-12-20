@@ -53,6 +53,7 @@ git clone https://github.com/rfrail3/keepconf.git ${F_TMP1}
 
 echo "Creating paths..."
 mkdir -p ${D_CNF}/hosts
+mkdir -p ${D_CNF}/files
 mkdir ${D_CNF}/pre-get.d
 mkdir ${D_CNF}/post-get.d
 mkdir ${D_CNF}/pre-commit.d
@@ -61,6 +62,7 @@ mkdir ${D_CNF}/post-commit.d
 echo "Copying files..."
 cp ${F_TMP1}/src/keepconf.cfg ${D_CNF}/
 cp -ar ${F_TMP1}/src/hosts/* ${D_CNF}/hosts/
+cp -ar ${F_TMP1}/src/files/* ${D_CNF}/files/
 cp ${F_TMP1}/src/post-get.d/01-remove-binary ${D_CNF}/post-get.d/
 chmod 744 ${D_CNF}/post-get.d/01-remove-binary
 cp ${F_TMP1}/src/keepconf ${D_BIN}/keepconf

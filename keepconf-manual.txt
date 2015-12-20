@@ -185,7 +185,7 @@ of them.
     is ignored. 
 
     Example:
-          list_files = /etc/keepconf/hosts/files_default.lst
+          list_files = /etc/keepconf/files/files_default.lst
           list_files = /etc/mydir/files_default.lst, /etc/mydir/files_env1.lst
 
   d_dest=
