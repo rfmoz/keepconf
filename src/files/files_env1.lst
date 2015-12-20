@@ -1,0 +1,8 @@
+# Get a particular app and subdirectories
+/opt/myapp/*
+
+# Except logs subdirectory (using '!')
+!/opt/myapp/logs/
+
+# But, include one file from a excluded dir (using '&')
+&/opt/myapp/logs/one_file.txt

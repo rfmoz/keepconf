@@ -172,8 +172,7 @@ of them.
 
   list_hosts=
     Path to file or comma separated list of files with the list of hosts to
-    fetch. One per line, anything following a sharp ('#') or semicolon (';')
-    is ignored. 
+    fetch. The content of all files is merged together.
 
     Example:
           list_hosts = /etc/keepconf/hosts/hosts_prod.lst
@@ -181,8 +180,7 @@ of them.
 
   list_files=
     Path to file or comma separated list of files with the list fo files to
-    fetch. One per line, anything following a sharp ('#') or semicolon (';')
-    is ignored. 
+    fetch. The content of all files is merged together.
 
     Example:
           list_files = /etc/keepconf/files/files_default.lst
@@ -300,6 +298,56 @@ of them.
            repo = False
            repo = "local"
            repo = "ssh://user@host/rute/to/repo"
+
+
+====================================
+| list_hosts and list_files format |
+====================================
+
+Each file listed inside "list_hosts" and "list_files" variables will have the 
+following properties.
+
+Anything following a sharp ('#') a semicolon (';') or a comma (',') is ignored.
+Space character is allowed, but if is possible, avoid it use. Take care of the
+tabs and spaces at the beginning of each line, dont add any of them.
+
+"list_hosts"
+  One host per line.
+
+  Complete dns hostnames and IP are allowed.
+
+  For willcard match its only available the use of ranges defined into
+  brackets [1-25]. A third argument can be passed to the range brackets
+  [1-25-2] for change the step.
+
+  Examples:
+         host1.prod
+         192.168.5.12
+         db.local.company
+         web-tier[1-10].prod.company
+
+"list_files"
+  One path per line.
+
+  Folder must ends with slash '/' character.
+
+  Its available the use of asterisk '*', interrogation '?' and ranges defined
+  into brackets [1-25] for willcard match.
+
+  Its possible to include, exclude or force paths:
+      Include - Normal line path.
+      Exclude - A '!' character must be before the path.
+      Force - Based on the behaviour of rsync and how keepconf interact with
+      it, exclude rules have precedence over includes. For force the include
+      of a path inside a exclude match, add a '&' character before the path.
+
+  Examples:
+         /etc/  # Include all /etc/ but not folders inside it
+         /etc/* # Include folders inside it recursively
+         /etc/apache2/sites-enabled/*.conf  # Include all files ended in conf
+         !/etc/cron.d/  # Exclude cron.d folder
+         &/etc/cron.d/myfile  # Force include inside a exclude rule match
+         /home/user1/conf[1-15]*.conf  # Get a range of files ended in conf
 
 
 ====================

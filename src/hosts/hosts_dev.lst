@@ -1,0 +1,5 @@
+# A simple hostname
+hostname2
+
+# Hostnames from 1 to 5 using expand property
+hostdev[1-2]
