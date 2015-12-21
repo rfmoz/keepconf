@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Add binary files to .gitignore
+#
+# receive a call: name-of-the-script arg1=list_of_hosts arg2=d_dest
+
+echo $1 # Argument 1
+echo $2 # Argument 2
+
+# Uncomment following "exit" line for avoid executing this file
+#exit
+
+echo -e "  Script -> Adding files to .gitignore"
+
+HOSTS=$1
+D_DEST=$2
+
+F_TEMP1=`mktemp`
+F_GIT="${D_DEST}/.gitignore"
+F_TEMP2=`mktemp`
+F_TEMP3=`mktemp`
+
+# Adding binary files to .gitignore:
+find ${D_DEST} -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary' | cut -d: -f1 | tee ${F_TEMP1} | xargs -i ls -al '{}'
+
+# Fix, avoid error invalid file
+cat ${F_GIT} ${F_TEMP2} | sort -n | uniq > ${F_TEMP3}
+
+mv ${F_TEMP3} ${F_GIT}
+
+
+exit 
+
+LB=`wc -l ${F_TEMP1} | grep -v "^$" | awk '{print $1}'`
+if [[ $LB -gt 0 ]]; then
+        echo -e "  Removed binary files: "
+        while read line; do
+                echo "   ${line}"
+        done < ${F_TEMP1}
+fi
+
+# Remove special files:
+find ${D_DEST} -not -type d -not -type f -not -type l -delete  -exec echo {} >> ${F_TEMP2} \;
+
+LE=`wc -l ${F_TEMP2} | grep -v "^$" | awk '{print $1}'`
+if [[ $LE -gt 0 ]]; then
+        echo -e "  Removed special files: "
+        while read line2; do
+                echo "   ${line2}"
+        done < ${F_TEMP2}
+fi
+
+rm -f ${F_TEMP1}
+rm -f ${F_TEMP2}
