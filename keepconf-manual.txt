@@ -87,11 +87,14 @@ There are only a few command line options :
   Initialize repository, wich will be located at "d_dest" variable defined in
   the configuration file. Depends if "repo" variable is defined with local or
   remote repository, a fresh init or a clone will be done. If is not defined
-  or is "False", any action will be done.
+  or is "False", any action will be done. With multiple configuration files, 
+  define one with -f option.
 
   Examples:
-         keepconf -i
-         keepconf -init
+         keepconf -i (For one con figuration file)
+         keepconf -i -f /etc/keepconf/keepconf.cfg
+         keepconf -i -f /etc/keepconf/keepconf-client1.cfg
+         keepconf -init (For one con figuration file)
 
 
 -n, --nocommit

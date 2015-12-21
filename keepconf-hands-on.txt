@@ -156,6 +156,10 @@ web1.example.com
 /etc/passwd
 /var/lib/dpkg/status
 
++ Initialize repository:
+
+root@backups:~# keepconf -i
+Initialized empty Git repository in /var/keepconf/hosts/.git/
 
 + Run it! (In this example, with "-s" for reduce output): 
 
@@ -314,4 +318,10 @@ Is it possible to have more than one configuration file, for example, each one f
 
 root@backups:~# cp /etc/keepconf/keepconf.cfg /etc/keepconf/keepconf-dev.cfg
 
-+ Change whatever you consider and run "keepconf" again. Both files will be parsed and process.
++ Change whatever you consider for the new enviroment.
+
++ Initialize the repository for the new configuration file. Use "-f" option for define the new one.
+
+root@backups:~# keepconf -i -f /etc/keepconf/keepconf-dev.cfg
+
++ Run "keepconf", both files will be parsed and process.

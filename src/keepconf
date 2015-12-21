@@ -661,7 +661,7 @@ def main():
 
         # Check "d_dest" directory requirements
         if (not options.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
-            sys.exit('ERROR: \"'+ str(c['d_dest']) +'\" is not a valid \"d_dest\" directory or is not initialized.\nPlease, try to execute \"keepconf -i\"')
+            sys.exit('ERROR: \"'+ str(c['d_dest']) +'\" is not a valid \"d_dest\" directory or is not initialized.\nPlease, try to execute \"keepconf -i -f '+ file_conf +'\"')
 
         # Run init option
         if options.gitinit:
