@@ -407,6 +407,10 @@ def fetch_process(c, options):
     # Get list of files with hostnames
     c['hosts'] = get_files_list(c, 'list_hosts', 'hosts')
 
+    # Almost one host for process
+    if not c['hosts']:
+        return hosts_ok, hosts_bad 
+
     # Get list of files with filelist
     c['files'] = get_files_list(c, 'list_files', 'files')
 
