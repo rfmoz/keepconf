@@ -26,6 +26,10 @@ uses rsync and git for the purpouse. Indeed, it can:
 | Prerequisites |
 =================
 
+Operating system:
+   - Linux
+   - FreeBSD
+
 Almost these version of the following software:
 
    python 3 with this modules (included in python core by default):
@@ -42,6 +46,7 @@ A configuration file, recomended in "/etc/keepconf/keepconf.cfg"
 Some free space for store the remote files.
 
 In the remote hosts, only rsync and a ssh client.
+
 
 
 ============================
@@ -388,6 +393,9 @@ execution.
 it is included into "post-commit.d" directory at the github repo.
 
 Full path definition is required for this variables.
+
+Note: Example bash scripts shipped with the proyect and located in post-get.d/ 
+and pre-commit.d/ only work on Linux systems.
 
 
 ===========

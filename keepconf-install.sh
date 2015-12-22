@@ -76,6 +76,7 @@ echo "Copying files..."
 cp ${F_TMP1}/src/keepconf ${D_BIN}/keepconf
 cp ${F_TMP1}/src/keepconf.cfg ${D_CNF}/
 cp -r ${F_TMP1}/src/post-get.d/* ${D_CNF}/post-get.d/
+cp -r ${F_TMP1}/src/pre-commit.d/* ${D_CNF}/pre-commit.d/
 cp -r ${F_TMP1}/src/hosts/* ${D_CNF}/hosts/
 cp -r ${F_TMP1}/src/files/* ${D_CNF}/files/
 chmod 744 ${D_CNF}/post-get.d/*

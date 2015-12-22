@@ -409,6 +409,7 @@ def fetch_process(c, options):
 
     # Almost one host for process
     if not c['hosts']:
+        print('  Any host for fetch. Skipping')
         return hosts_ok, hosts_bad 
 
     # Get list of files with filelist
