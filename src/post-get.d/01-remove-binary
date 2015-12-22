@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# Removing binary files before commit them into repository
+# Remove binary files before commit them into repository
+#
+# An alternative example script for avoid commit binary files using .gitignore
+# is located in pre-commit.d > 01-add-git-ignore
 #
 # receive a call: name-of-the-script arg1=list_of_hosts arg2=d_dest
 
@@ -18,27 +21,32 @@ D_DEST=$2
 F_TEMP1=`mktemp`
 F_TEMP2=`mktemp`
 
-# Remove binary files:
-find ${D_DEST} -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary' | cut -d: -f1 | tee ${F_TEMP1} | xargs -i rm -f '{}'
 
-LB=`wc -l ${F_TEMP1} | grep -v "^$" | awk '{print $1}'`
-if [[ $LB -gt 0 ]]; then
-        echo -e "  Removed binary files: "
-        while read line; do
-                echo "   ${line}"
+# Remove special files:
+find ${D_DEST} -not -type d -not -type f -not -type l -delete  -exec echo {} >> ${F_TEMP1} \;
+
+# Print list of special files removed
+LE=`wc -l ${F_TEMP1} | grep -v "^$" | awk '{print $1}'`
+if [[ $LE -gt 0 ]]; then
+        echo -e "  Removed special files: "
+        while read line1; do
+                echo "   ${line1}"
         done < ${F_TEMP1}
 fi
 
-# Remove special files:
-find ${D_DEST} -not -type d -not -type f -not -type l -delete  -exec echo {} >> ${F_TEMP2} \;
 
-LE=`wc -l ${F_TEMP2} | grep -v "^$" | awk '{print $1}'`
-if [[ $LE -gt 0 ]]; then
-        echo -e "  Removed special files: "
+# Remove binary files:
+find ${D_DEST} -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary' | cut -d: -f1 | tee ${F_TEMP2} | xargs -i rm -f '{}'
+
+# Print list of binary files removed
+LB=`wc -l ${F_TEMP2} | grep -v "^$" | awk '{print $1}'`
+if [[ $LB -gt 0 ]]; then
+        echo -e "  Removed binary files: "
         while read line2; do
                 echo "   ${line2}"
         done < ${F_TEMP2}
 fi
+
 
 rm -f ${F_TEMP1}
 rm -f ${F_TEMP2}
