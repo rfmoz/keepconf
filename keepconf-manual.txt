@@ -26,9 +26,6 @@ uses rsync and git for the purpouse. Indeed, it can:
 | Prerequisites |
 =================
 
-Operating system:
-   - Linux
-   - FreeBSD
 
 Almost these version of the following software:
 
