@@ -22,7 +22,7 @@ from subprocess import call
 from distutils.util import strtobool
 from distutils.dir_util import mkpath
 
-__version__ = '2.0.00-dev'
+__version__ = '2.0.00'
 __config__ = '/etc/keepconf/'  # default configuration path
 VERBOSE = 0
 

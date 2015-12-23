@@ -2,6 +2,13 @@ keepconf
 ========
 
 Keepconf is a agentless tool for backup and track files from remote hosts, using rsync and git for the purpose.
+Indeed, it can:
+  - Process lists of files/folders for retrieve it from hosts
+  - Limit size of the files fetched
+  - Store content in different defined directories
+  - Trigger hooks for execute whatever after/before fetching/committing
+  - Use a local or remote git repository
+  - Report the final status for monitoring the results in csv format
 
 
 ### Basic Installation and usage
