@@ -368,8 +368,6 @@ def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, t
         else:
             hosts_ok_list = ''
 
-        logging.info('Writing stats to monitor file '+ str(mon_file))
-
         # Write into file
         with open(mon_file, "a") as file_monitor:
             try:
@@ -393,6 +391,8 @@ def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, t
             except:
                 file_monitor.write('\"COMMIT-T\",\"0\"\n')
             file_monitor.write('\"TOTAL-T\",\"%.2f' % total_time + '\"\n')
+
+        print('- Monitor file: '+ str(mon_file))
 
 
 def fetch_process(c, options):
