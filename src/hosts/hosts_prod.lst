@@ -1,0 +1,8 @@
+# Own hostname
+localhost
+
+# A simple hostname
+#hostname1
+
+# Hostnames from 1 to 5 using expand property
+#hostprod[1-5]

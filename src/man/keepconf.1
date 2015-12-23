@@ -1,0 +1,59 @@
+.TH KEEPCONF 23 November 2015 "2.0.00" "Linux Manual"
+
+.SH NAME
+keepconf \- Backup and track files from remote hosts using rsync and git
+
+.SH SYNOPSIS
+keepconf [\-h | \-\-help] [{\-f | \-\-conf}=<configuration\ path>] [\-i | \-\-init] [\-n | \-\-nocommit] [\-c | \-\-commitonly] [{\-m | \-\-message}=<text>]  [\-s | \-\-silent] [\-x | \-\-xilent] [\-v | \-\-verbose] [\-V | \-\-version]
+
+.SH DESCRIPTION
+Keepconf is a agentless tool for backup and track files from remote hosts, using
+rsync and git for the purpose.
+
+.SH OPTIONS
+.SS FIELDS
+.B \-h | \-\-help
+\- Show this help message and exit.
+.PP
+.B \-f | \-\-conf
+\- Configuration path.
+.PP
+.B \-i | \-\-init
+\- Initialize git repostory.
+.PP
+.B \-n | \-\-nocommit
+\- Avoid commit changes.
+.PP
+.B \-c | \-\-commitonly
+\- Only commit changes.
+.PP
+.B \-m | \-\-message
+\- Commit message.
+.PP
+.B \-s | \-\-silent
+\- Silent fetching output.
+.PP
+.B \-x | \-\-xilent
+\- Silent commit output.
+.PP
+.B \-v | \-\-verbose
+\- Verbose output.
+.PP
+.B \-V | \-\-version
+\- Show version.
+.SH FILES
+https://github.com/rfrail3/keepconf
+
+.SH SEE ALSO
+A much better documentation can be found in keepconf-manual.txt.
+
+.SH "AUTHOR"
+.IX Header "AUTHORS"
+Ricardo F. <rfraile@rfraile.eus>
+.PP
+.SH "COPYRIGHT"
+.IX Header "COPYRIGHT"
+Copyright (C) 2015 by Ricardo F. All Rights Reserved.
+This product is distributed in the hope that it will be useful, but
+WITHOUT any warranty; without even the implied warranty of 
+MERCHANTABILITY or FITNESS for a particular purpose.

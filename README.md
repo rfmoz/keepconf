@@ -2,6 +2,13 @@ keepconf
 ========
 
 Keepconf is a agentless tool for backup and track files from remote hosts, using rsync and git for the purpose.
+Indeed, it can:
+  - Process lists of files/folders for retrieve it from hosts
+  - Limit size of the files fetched
+  - Store content in different defined directories
+  - Trigger hooks for execute whatever after/before fetching/committing
+  - Use a local or remote git repository
+  - Report the final status for monitoring the results in csv format
 
 
 ### Basic Installation and usage
@@ -29,17 +36,14 @@ Initialize the folders and repository:
 
         keepconf -i
 
-Make a simple file for backup some paths of the local host, take care of the tabs and spaces at the beginning of each line, dont add any of them:
-
-	printf "%s\n" '[main]' 'directory=myhost/' '[hosts]' 'localhost' '[files]' '/etc/' '!/etc/passwd' '!/etc/group' '!/etc/shadow' '/proc/sys/kernel/*' > /etc/keepconf/hosts/localhost.cfg
-
-Finally, launch the command and see the process:
+Some sample files are located inside "/etc/keepconf/hosts" and "/etc/keepconf/files" for backup all "/etc/*" content in "localhost" plus some commented examples.
+Run the command for backup them:
 
         keepconf
 
 Now, inside the destionation folder, there are all the files fetched:
 
-        cd /var/keepconf/hosts/myhost/localhost
+        cd /var/keepconf/hosts/localhost
 
 And a git repo tracking the files:
 

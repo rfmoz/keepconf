@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Add binary files to .gitignore
+#
+# This is an alternative example script for avoid commit binary files
+# the other is located in post-get.d > 01-remove-binary
+#
+# receive a call: name-of-the-script arg1=list_of_hosts arg2=d_dest
+
+#echo $1 # Argument 1
+#echo $2 # Argument 2
+
+# Uncomment following "exit" line for avoid executing this file
+#exit
+
+echo -e "  Script -> Adding files to .gitignore"
+
+HOSTS=$1
+D_DEST=$2
+
+F_TEMP1=`mktemp`
+F_TEMP2=`mktemp`
+F_TEMP3=`mktemp`
+F_GIT="${D_DEST}/.gitignore"
+
+
+# Remove special files:
+find ${D_DEST} -not -type d -not -type f -not -type l -delete  -exec echo {} >> ${F_TEMP1} \;
+
+# Print list of special files removed
+LE=`wc -l ${F_TEMP1} | grep -v "^$" | awk '{print $1}'`
+if [[ $LE -gt 0 ]]; then
+        echo -e "  Removed special files: "
+        while read line1; do
+                echo "   ${line1}"
+        done < ${F_TEMP1}
+fi
+
+
+# Adding binary files to .gitignore:
+cd ${D_DEST} && find . -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary' | cut -d: -f1 > ${F_TEMP2}
+
+# Merge existing and new files
+touch ${F_GIT}
+cat ${F_GIT} ${F_TEMP2} | sort -n | uniq > ${F_TEMP3}
+
+# Replace original file
+mv ${F_TEMP3} ${F_GIT} 
+
+# Print excluded files
+LB=`wc -l ${F_TEMP2} | grep -v "^$" | awk '{print $1}'`
+if [[ $LB -gt 0 ]]; then
+        echo -e "  Excluded binary files in .gitignore: "
+        while read line2; do
+                echo "   ${line2}"
+        done < ${F_TEMP2}
+fi
+
+
+rm -f ${F_TEMP1}
+rm -f ${F_TEMP2}
+rm -f ${F_TEMP3}
