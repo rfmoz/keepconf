@@ -4,7 +4,7 @@
                          ----------------------
                              version 2.0.00
                                 Ricardo F.
-                             18/December/2015
+                             23/December/2015
 
 
 
@@ -239,7 +239,7 @@ of them.
            post_get = False  # (Default)
 
   max_size=
-    Global size limit for files to fetch. It must be a number followed by the
+    Size limit for files to fetch. It must be a number followed by the
     initial of the size name.
 
     Examples:
@@ -248,11 +248,27 @@ of them.
            max_size = 1024B
 
   rsync_user=
-    Global default user for connect to remote hosts via rsync.
+    User for connect to remote hosts via ssh.
 
     Examples:
            rsync_user = backup  # (Default)
            rsync_user = root
+
+  rsync_key=
+    Ssh key for use in the rsync connection to the hosts. Define a path to the
+    key. If none is defined or this variable is not used, the default ssh
+    behaviour for the user who execute keepconf will be used.
+
+    Examples:
+           rsync_key = None  # (Default)
+           rsync_key = /home/backup/.ssh/servers-prod-key.rsa
+
+  rsync_port=
+    Ssh port for use in the rsync connection tho the remote hosts.
+
+    Examples:
+           rsync_port = 22  # (Default)
+           rsync_port = 2222
 
   rsync_opt=
     Common options for pass to rsync command. They must be a compact list
@@ -412,7 +428,7 @@ execution time:
 | Schedule execution |
 ======================
 
-For have a automate backup with a log, this line can be added to the cron
+For automate the backup process with a log, this line can be added to the cron
 daemon:
 15 06 * * * keepconf &> /var/log/keepconf.log
 
@@ -440,8 +456,10 @@ By default, paths ended in '/' fetch all content inside it only, if ends with
 A munin pluging was written for graph the csv reports of keepconf, look for it
 into the keepconf github account.
 
-Inside the rsync call, the arguments StrictHostKeyChecking=no, LogLevel=quiet
-and UserKnownHostsFile=/dev/null are passed for avoid annoying startup issues.
+Inside the rsync call, the arguments StrictHostKeyChecking=no and 
+UserKnownHostsFile=/dev/null are passed for avoid annoying startup issues
+when hosts are new and any ssh connection is done before (avoid prompt for 
+accept ssh fingerprint).
 
 If you found any bugs, please report it with all information as you can
 (a verbose output its helpfull). Thanks.

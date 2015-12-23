@@ -3,6 +3,7 @@ keepconf (2.0.0) stable; urgency=low
   * Allow multiple configuration files.
   * Adding support for one .csv report per configuration file.
   * Adding "list_hosts" and "list_files" properties.
+  * Adding "rsync_port" and "rsync_key" properties.
   * Remove use of roles.
   * Remove "d_conf" variable.
   * Using logging module for verbose mode.
