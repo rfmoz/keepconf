@@ -242,7 +242,7 @@ def extract_walk(cfg_in_, walking=True):
         paths_lst += walk_lst
 
     # Return sorted list
-    return sorted(paths_lst)
+    return sorted(set(paths_lst))
 
 
 def test_repo_dir(d_dest_, commit_):
@@ -398,6 +398,55 @@ def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, t
 def fetch_process(c, options):
     ''' Fetch files from hosts'''
 
+    def rsync_host(c, options, f_walk, hosts_ok, hosts_bad):
+        ''' Construct rsync call and fetch host'''
+        # Define path name for store fetched files
+        final_path = os.path.join(c['d_dest'], host)
+
+        # Check if path exists, if not, do it
+        if not os.path.isdir(final_path):
+            logging.info('Making destination folder: ' + final_path)
+            mkpath(final_path)
+        else:
+            logging.info('Destination folder exists: ' + final_path)
+
+        print('- Fetching host: '+ host)
+
+        # Construct ssh options:
+        # If verbose is not used, quiet ssh mode
+        if VERBOSE:
+            ssh_loglevel = ''
+        else:
+            ssh_loglevel = ' -o LogLevel=quiet'
+
+        # If rsync key is used, add it
+        if c['rsync_key']:
+            ssh_key = ' -i '+str(c['rsync_key'])
+        else:
+            ssh_key = ''
+
+        # ssh options '-oStrictHostKeyChecking=no' and '-oUserKnownHostsFile=/dev/null' are for
+        # for avoid annoying errors in rsync when hosts are new.
+        # If you need security, please comment the following line and uncomment the next.
+        ssh_opt = 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p '+ c['rsync_port'] + ssh_loglevel + ssh_key
+        #ssh_opt = 'ssh -p '+ c['rsync_port'] + ssh_loglevel + ssh_key
+
+        # Create rsync call. For modify it, the place is the following line:
+        rsync_call = ('rsync', '-e', ssh_opt, '-'+c['rsync_opt'], '--progress', '--delete-excluded',
+                      '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+c['max_size'],
+                      '--include-from=' + f_walk.name, '--prune-empty-dirs', c['rsync_user']+'@'+host+':/', final_path)
+        logging.info(' '.join(map(str, rsync_call)))
+
+        # Execute rsync and construct list with ok and bad hosts
+        sys.stdout.flush()
+        if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
+            hosts_ok.append(host)
+        else:
+            hosts_bad.append(host)
+        sys.stdout.flush()
+        
+        return hosts_ok, hosts_bad
+
     # Define list for store ok and bad fetched hosts
     hosts_ok, hosts_bad = [], []
 
@@ -410,7 +459,7 @@ def fetch_process(c, options):
     # Almost one host for process
     if not c['hosts']:
         print('  Any host for fetch. Skipping')
-        return hosts_ok, hosts_bad 
+        return hosts_ok, hosts_bad
 
     # Get list of files with filelist
     c['files'] = get_files_list(c, 'list_files', 'files')
@@ -460,49 +509,12 @@ def fetch_process(c, options):
     # The temp file must have always the following last line
     f_walk.write('- *\n')
 
-    # Reset position to the beginning of the file
-    f_walk.seek(0)
-
-    # For each hostname in the list...
-    for host in c['hosts']:
-
-        # Define path name for store fetched files
-        final_path = os.path.join(c['d_dest'], host)
-
-        # Check if path exists, if not, do it
-        if not os.path.isdir(final_path):
-            logging.info('Making destination folder: ' + final_path)
-            mkpath(final_path)
-        else:
-            logging.info('Destination folder exists: ' + final_path)
-
-        print('- Fetching host: '+ host)
-
-        # ssh options for avoid annoying errors in rsync, if you need security, please remove from
-        # the rsync_call "'-e', ssh_rsync_opt," or uncomment the following two "ssh_rsync_opt".
-        if VERBOSE:
-            ssh_rsync_opt = 'ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null'
-            # ssh_rsync_opt = '""'
-        else:
-            ssh_rsync_opt = 'ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet'
-            # ssh_rsync_opt = '""'
-
-        # Create rsync call. For modify it, the place is the following line:
-        rsync_call = ('rsync', '-e', ssh_rsync_opt, '-'+c['rsync_opt'], '--progress', '--delete-excluded',
-                      '--timeout='+c['rsync_timeout'], '--ignore-errors', '--max-size='+c['max_size'],
-                      '--include-from=' + f_walk.name, '--prune-empty-dirs', c['rsync_user']+'@'+host+':/', final_path)
-        logging.info(' '.join(map(str, rsync_call)))
-
-        # Execute rsync and construct list with ok and bad hosts
-        sys.stdout.flush()
-        if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
-            hosts_ok.append(host)
-        else:
-            hosts_bad.append(host)
-        sys.stdout.flush()
-
     # Close temporary file with the list of files used by rsync
     f_walk.close()
+
+    # For each hostname in the list, rsync it.
+    for host in c['hosts']:
+        rsync_host(c, options, f_walk, hosts_ok, hosts_bad)
 
     # Don't delete file if verbose mode is enabled (for easy debug)
     if VERBOSE:
@@ -590,6 +602,8 @@ def main():
         'post_get': False,
         'max_size': '25M',
         'rsync_user': 'backup',
+        'rsync_key': None,
+        'rsync_port': '22',
         'rsync_timeout': '5',
         'rsync_opt': 'arHvzL',
         'commit': True,
@@ -652,6 +666,8 @@ def main():
         c['post_get'] = assign_variable(c, parser, 'sync', 'post_get', normpath=True)
         c['max_size'] = assign_variable(c, parser, 'sync', 'max_size')
         c['rsync_user'] = assign_variable(c, parser, 'sync', 'rsync_user')
+        c['rsync_key'] = assign_variable(c, parser, 'sync', 'rsync_key')
+        c['rsync_port'] = assign_variable(c, parser, 'sync', 'rsync_port')
         c['rsync_opt'] = assign_variable(c, parser, 'sync', 'rsync_opt')
         if options.commit:
             c['commit'] = assign_variable(c, parser, 'vcs', 'commit')
