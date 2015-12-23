@@ -38,7 +38,7 @@ fi
 
 
 # Adding binary files to .gitignore:
-find ${D_DEST} -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary' | cut -d: -f1 > ${F_TEMP2}
+cd ${D_DEST} && find . -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary' | cut -d: -f1 > ${F_TEMP2}
 
 # Merge existing and new files
 touch ${F_GIT}
