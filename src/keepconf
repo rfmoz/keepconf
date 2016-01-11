@@ -22,7 +22,7 @@ from subprocess import call
 from distutils.util import strtobool
 from distutils.dir_util import mkpath
 
-__version__ = '2.0.00'
+__version__ = '2.1.00-dev'
 __config__ = '/etc/keepconf/'  # default configuration path
 VERBOSE = 0
 
@@ -293,7 +293,22 @@ def get_files_list(c, key1, key2):
     # For store list to return
     values = []
 
-    # If key have something...
+    # If key2 have something...
+    if c[key2]:
+
+        # Read lines and expand range if is the case
+        for line in c[key2]:
+            try:
+                lne = sanitize(line)
+                if detect_range(lne):
+                    logging.info('Range detected: '+ lne)
+                    values = values + expand_range(lne)
+                else:
+                    values.append(lne)
+            except:
+                continue
+
+    # If key1 have something...
     if c[key1]:
 
         # For each file in the list
@@ -648,15 +663,23 @@ def main():
         print('- Processing: '+ str(file_conf))
 
         # Parse options in config file
-        parser = ConfigParser()
+        parser = ConfigParser(allow_no_value=True)
         parser.read(file_conf)
 
         # Assign variables from config file to main dictionary
         c['d_dest'] = assign_variable(c, parser, 'main', 'd_dest')
-        c['list_hosts'] = assign_variable(c, parser, 'main', 'list_hosts')
+        c['list_hosts'] = assign_variable(c, parser, 'hosts', 'list_hosts')
         c['hosts'] = []  # For fulfill later with hostname list
-        c['list_files'] = assign_variable(c, parser, 'main', 'list_files')
+        for line, _ in (parser.items('hosts')):
+            if not line == 'list_hosts':
+                line = (sanitize(line))
+                c['hosts'].append(line)
+        c['list_files'] = assign_variable(c, parser, 'files', 'list_files')
         c['files'] = []  # For fulfill later with files list
+        for line, _ in (parser.items('files')):
+            if not line == 'list_files':
+                line = (sanitize(line))
+                c['files'].append(line)
         c['d_monitor'] = assign_variable(c, parser, 'main', 'd_monitor')
         if options.commitonly:
             c['fetch'] = assign_variable(c, parser, 'sync', 'fetch')
