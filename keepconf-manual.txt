@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 2.0.00
+                             version 2.1.00
                                 Ricardo F.
-                             23/December/2015
+                             12/January/2016
 
 
 
@@ -175,22 +175,6 @@ of them.
 [main]
   Section for general variables. The following are available inside here:
 
-  list_hosts=
-    Path to file or comma separated list of files with the list of hosts to
-    fetch. The content of all files is merged together.
-
-    Example:
-          list_hosts = /etc/keepconf/hosts/hosts_prod.lst
-          list_hosts = /etc/mydir/hosts_prod.lst, /etc/mydir/hosts_dev.lst
-
-  list_files=
-    Path to file or comma separated list of files with the list fo files to
-    fetch. The content of all files is merged together.
-
-    Example:
-          list_files = /etc/keepconf/files/files_default.lst
-          list_files = /etc/mydir/files_default.lst, /etc/mydir/files_env1.lst
-
   d_dest=
     Directory for store the remote files and locate the repository. It is a
     requirement for the basic behaviour of keepconf. Rsync put there all
@@ -208,6 +192,51 @@ of them.
     Examples:
            d_monitor = /var/tmp/keepconf/
            d_monitor = False  # (Default)
+
+
+[hosts]
+  Section for define hosts to fetch. The following are available inside here:
+
+  list_hosts=
+    Path to file or comma separated list of files with the list of hosts to
+    fetch. The content of all files is merged together.
+
+    Example:
+          list_hosts = /etc/keepconf/hosts/hosts_prod.lst
+          list_hosts = /etc/mydir/hosts_prod.lst, /etc/mydir/hosts_dev.lst
+
+  (list of hosts)
+    Define hostsnames or IPs directly. The format is the same as described 
+    in "list_hosts and list_files format". If list_host is already present, 
+    all will be combined.
+
+    Example:
+          webserver
+          ftpserver
+          192.168.1.50
+
+
+[files]
+  Section for define lists of files to fetch. The following are available 
+  inside here:
+
+  list_files=
+    Path to file or comma separated list of files with the list fo files to
+    fetch. The content of all files is merged together.
+
+    Example:
+          list_files = /etc/keepconf/files/files_default.lst
+          list_files = /etc/mydir/files_default.lst, /etc/mydir/files_env1.lst
+
+  (list of paths)
+    Define paths for fetch directly. The format is the same as described in 
+    "list_hosts and list_files format". If list_files is already present, all 
+    will be combined.
+
+    Example:
+          /etc/resolv.conf
+          /opt/app1/*
+          !/opt/app1/logs
 
 
 [sync]
@@ -325,7 +354,8 @@ of them.
 | list_hosts and list_files format |
 ====================================
 
-Each file listed inside "list_hosts" and "list_files" variables will have the 
+Each file listed inside "list_hosts" and "list_files" variables (and hosts and
+files listed directly inside [hosts] and [files] sections)  will have the 
 following properties.
 
 Anything following a sharp ('#') a semicolon (';') or a comma (',') is ignored.
