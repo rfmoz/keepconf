@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, optparse, os, glob, time, string, re, tempfile, logging
+import sys, argparse, os, glob, time, string, re, tempfile, logging
 from configparser import ConfigParser
 from subprocess import call
 from distutils.util import strtobool
 from distutils.dir_util import mkpath
 
-__version__ = '2.1.00'
+__version__ = '2.1.10-dev'
 __config__ = '/etc/keepconf/'  # default configuration path
 VERBOSE = 0
 
@@ -40,53 +40,62 @@ def get_arguments():
         global VERBOSE
         VERBOSE = 1
 
-    parser = optparse.OptionParser()
-    parser.add_option('-f', '--conf',
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f', '--conf',
                       dest='config',
                       default=__config__,
                       action='store',
                       help='configuration file/folder path',
                       metavar="PATH")
-    parser.add_option('-i', '--init',
+    parser.add_argument('-i', '--init',
                       dest='gitinit',
                       default=False,
                       action='store_true',
                       help='initialize git repostory')
-    parser.add_option('-n', '--nocommit',
+    parser.add_argument('-n', '--nocommit',
                       dest='commit',
                       default=True,
                       action='store_false',
                       help='avoid commit changes')
-    parser.add_option('-c', '--commitonly',
+    parser.add_argument('-c', '--commitonly',
                       dest='commitonly',
                       default=True,
                       action='store_false',
                       help='only commit changes')
-    parser.add_option('-m', '--message',
+    parser.add_argument('-m', '--message',
                       dest='message',
                       default=False,
                       action='store',
                       help='commit message',
                       metavar="TEXT")
-    parser.add_option('-s', '--silent',
+    parser.add_argument('-s', '--silent',
                       dest='silent',
                       default=False,
                       action='store_true',
                       help='silent fetching output')
-    parser.add_option('-x', '--xilent',
+    parser.add_argument('-x', '--xilent',
                       dest='xilent',
                       default=False,
                       action='store_true',
                       help='silent commit output')
-    parser.add_option('-v', '--verbose',
-                      action='callback',
-                      callback=enable_verbose,
+    parser.add_argument('-v', '--verbose',
+                      dest='verbose',
+                      default=False,
+                      action='store_true',
                       help='verbose output')
-    parser.add_option('-V', '--version',
-                      action='callback',
-                      callback=print_version,
+    parser.add_argument('-V', '--version',
+                      dest='version',
+                      default=False,
+                      action='store_true',
                       help='show version')
-    options, _ = parser.parse_args()
+    options = parser.parse_args()
+
+    if options.verbose:
+        enable_verbose()
+        print(vars(options))
+
+    if options.version:
+        print_version()
 
     return options
 
