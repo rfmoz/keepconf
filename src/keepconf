@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, argparse, os, glob, time, string, re, tempfile, logging
+import sys, argparse, os, glob, time, string, re, tempfile, logging, signal
 from configparser import ConfigParser
 from subprocess import call
 from distutils.util import strtobool
@@ -25,6 +25,9 @@ from distutils.dir_util import mkpath
 __version__ = '2.1.10-dev'
 __config__ = '/etc/keepconf/'  # default configuration path
 VERBOSE = 0
+
+# Handling SIGPIPE to terminate
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 def get_arguments():
     """Get arguments from command line"""
@@ -80,7 +83,7 @@ def get_arguments():
                         help='silent commit output')
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
-                        efault=False,
+                        default=False,
                         action='store_true',
                         help='verbose output')
     parser.add_argument('-V', '--version',
