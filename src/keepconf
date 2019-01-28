@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # keepconf - Backup and track files from hosts keeping them inside a repository
-# Copyright (C) 2015 - Ricardo F.
+# Copyright (C) 2018 - Ricardo F.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from subprocess import call
 from distutils.util import strtobool
 from distutils.dir_util import mkpath
 
-__version__ = '2.1.10-dev'
+__version__ = '2.1.10'
 __config__ = '/etc/keepconf/'  # default configuration path
 VERBOSE = 0
 

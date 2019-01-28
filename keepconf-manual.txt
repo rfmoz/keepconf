@@ -2,7 +2,7 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 2.1.00
+                             version 2.1.10
                                 Ricardo F.
                              28/January/2018
 

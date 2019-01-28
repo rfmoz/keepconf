@@ -1,8 +1,8 @@
-keepconf (2.1.10-dev) stable; urgency=low
+keepconf (2.1.10) stable; urgency=low
 
   * Arguments refactoring. Change deprecated optparse to argpaser.
 
- -- Ricardo F. <rfraile@rfraile.eu>  Mon, 15 Jan 2017 11:23:18 +0200
+ -- Ricardo F. <rfraile@rfraile.eu>  Mon, 28 Jan 2018 11:23:18 +0200
 
 keepconf (2.1.0) stable; urgency=low
 
