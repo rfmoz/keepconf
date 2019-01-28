@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 2.1.00
+                             version 2.1.10
                                 Ricardo F.
-                             12/January/2016
+                             28/January/2018
 
 
 
@@ -475,6 +475,22 @@ And for rotate the log generated, add a file called "keepconf" to
   compress
   missingok
 }
+
+
+===========================
+| Using multiple ssh keys |
+===========================
+
+Rely on ".ssh/config" to connect to different hosts with different ssh keys.
+
+As example:
+# cat .ssh/authorized_keys
+
+Host web1.rack1
+  IdentityFile /root/.ssh/id_rsa_001
+
+Host *.rack2
+  IdentityFile /root/.ssh/id_rsa_002
 
 
 ================
