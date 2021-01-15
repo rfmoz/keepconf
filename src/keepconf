@@ -139,6 +139,8 @@ def yes_or_not(question):
 # and are part of Ansible software located in github.com/ansible
 # Are distributed under the terms of GNU General Public License
 # (c) 2012, Zettar Inc.
+# File lib/ansible/inventory/expand_hosts.py - 4 May 2015
+# Commit ce3ef7f4c16e47d5a0b5600e1c56c177b7c93f0d
 
 def detect_range(line=None):
     """Detect is line have a range"""
@@ -155,7 +157,7 @@ def expand_range(line=None):
         (head, nrange, tail) = line.replace('[', '|', 1).replace(']', '|', 1).split('|')
         bounds = nrange.split("-")
         if len(bounds) != 2 and len(bounds) != 3:
-            print("WARNING: Range incorrectly specified")
+            logging.warning("Range must be begin:end")
         beg = bounds[0]
         end = bounds[1]
         if len(bounds) == 2:
@@ -165,11 +167,11 @@ def expand_range(line=None):
         if not beg:
             beg = "0"
         if not end:
-            print("WARNING: Range end value missing")
+            logging.warning("Range must specify end value missing")
         if beg[0] == '0' and len(beg) > 1:
             rlen = len(beg)  # range length formatting hint
             if rlen != len(end):
-                print("WARNING: Range format incorrectly specified")
+                logging.warning("Range format must specify equal-length begin and end formats")
             fill = lambda _: str(_).zfill(rlen)  # range sequence
         else:
             fill = str
@@ -178,7 +180,7 @@ def expand_range(line=None):
             i_beg = string.ascii_letters.index(beg)
             i_end = string.ascii_letters.index(end)
             if i_beg > i_end:
-                print("WARNING: Range format invalid")
+                print("WARNING: Range must have begin <= end")
             seq = string.ascii_letters[i_beg:i_end+1]
         except ValueError:  # not an alpha range
             seq = range(int(beg), int(end)+1, int(step))
@@ -189,6 +191,7 @@ def expand_range(line=None):
                 all_hosts.extend(expand_range(hname))
             else:
                 all_hosts.append(hname)
+
         return all_hosts
 
 
