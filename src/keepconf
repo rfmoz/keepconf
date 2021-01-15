@@ -607,8 +607,8 @@ def assign_variable(c, parser, section, key, normpath=False):
     return value
 
 
-def main():
-    """main entry point, manage behaviour based on configuration"""
+def set_conf(arg, index, file_conf):
+    """Set configuration values"""
 
     # Default values
     c = {
@@ -629,6 +629,61 @@ def main():
         'pre_commit': False,
         'post_commit': False,
         'repo': 'local'}
+
+    print('- - -')
+    print('- Processing: '+ str(file_conf))
+
+    # Parse options in config file
+    parser = ConfigParser(allow_no_value=True)
+    parser.read(file_conf)
+
+    # Assign variables from config file to main dictionary
+    c['d_dest'] = assign_variable(c, parser, 'main', 'd_dest')
+    c['list_hosts'] = assign_variable(c, parser, 'hosts', 'list_hosts')
+    c['hosts'] = []  # For fulfill later with hostname list
+    for line, _ in parser.items('hosts'):
+        if not line == 'list_hosts':
+            line = (sanitize(line))
+            c['hosts'].append(line)
+    c['list_files'] = assign_variable(c, parser, 'files', 'list_files')
+    c['files'] = []  # For fulfill later with files list
+    for line, _ in parser.items('files'):
+        if not line == 'list_files':
+            line = (sanitize(line))
+            c['files'].append(line)
+    c['d_monitor'] = assign_variable(c, parser, 'main', 'd_monitor')
+    if arg.commitonly:
+        c['fetch'] = assign_variable(c, parser, 'sync', 'fetch')
+    else:
+        c['fetch'] = False
+    c['pre_get'] = assign_variable(c, parser, 'sync', 'pre_get', normpath=True)
+    c['post_get'] = assign_variable(c, parser, 'sync', 'post_get', normpath=True)
+    c['max_size'] = assign_variable(c, parser, 'sync', 'max_size')
+    c['rsync_user'] = assign_variable(c, parser, 'sync', 'rsync_user')
+    c['rsync_key'] = assign_variable(c, parser, 'sync', 'rsync_key')
+    c['rsync_port'] = assign_variable(c, parser, 'sync', 'rsync_port')
+    c['rsync_opt'] = assign_variable(c, parser, 'sync', 'rsync_opt')
+    if arg.commit:
+        c['commit'] = assign_variable(c, parser, 'vcs', 'commit')
+    else:
+        c['commit'] = False
+    c['pre_commit'] = assign_variable(c, parser, 'vcs', 'pre_commit', normpath=True)
+    c['post_commit'] = assign_variable(c, parser, 'vcs', 'post_commit', normpath=True)
+    c['repo'] = assign_variable(c, parser, 'vcs', 'repo')
+    c['cfg_ex'] = []  # For fulfill later with excluded files list
+    c['cfg_frz'] = []  # For fulfill later with force include files list
+    c['cfg_in'] = []  # For fulfill later with include files list
+
+    # Check "d_dest" directory requirements
+    if (not arg.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
+        logging.error('ERROR: \"'+ str(c['d_dest']) +'\" is not a valid \"d_dest\" directory or is not initialized.\nPlease, try to execute \"keepconf -i -f '+ file_conf +'\"')
+        sys.exit(-1)
+
+    return c
+
+
+def main():
+    """main entry point, manage behaviour based on configuration"""
 
     # Get arguments from command line
     arg = get_arguments()
@@ -658,56 +713,8 @@ def main():
         # Define list for store ok and bad fetched hosts
         hosts = {'ok': [], 'bad': []}
 
-        # For more than one file, add separate banner
-        if index > 0:
-            print('\n-------------------------\n')
-
-        print('- Processing: '+ str(file_conf))
-
-        # Parse options in config file
-        parser = ConfigParser(allow_no_value=True)
-        parser.read(file_conf)
-
-        # Assign variables from config file to main dictionary
-        c['d_dest'] = assign_variable(c, parser, 'main', 'd_dest')
-        c['list_hosts'] = assign_variable(c, parser, 'hosts', 'list_hosts')
-        c['hosts'] = []  # For fulfill later with hostname list
-        for line, _ in parser.items('hosts'):
-            if not line == 'list_hosts':
-                line = (sanitize(line))
-                c['hosts'].append(line)
-        c['list_files'] = assign_variable(c, parser, 'files', 'list_files')
-        c['files'] = []  # For fulfill later with files list
-        for line, _ in parser.items('files'):
-            if not line == 'list_files':
-                line = (sanitize(line))
-                c['files'].append(line)
-        c['d_monitor'] = assign_variable(c, parser, 'main', 'd_monitor')
-        if arg.commitonly:
-            c['fetch'] = assign_variable(c, parser, 'sync', 'fetch')
-        else:
-            c['fetch'] = False
-        c['pre_get'] = assign_variable(c, parser, 'sync', 'pre_get', normpath=True)
-        c['post_get'] = assign_variable(c, parser, 'sync', 'post_get', normpath=True)
-        c['max_size'] = assign_variable(c, parser, 'sync', 'max_size')
-        c['rsync_user'] = assign_variable(c, parser, 'sync', 'rsync_user')
-        c['rsync_key'] = assign_variable(c, parser, 'sync', 'rsync_key')
-        c['rsync_port'] = assign_variable(c, parser, 'sync', 'rsync_port')
-        c['rsync_opt'] = assign_variable(c, parser, 'sync', 'rsync_opt')
-        if arg.commit:
-            c['commit'] = assign_variable(c, parser, 'vcs', 'commit')
-        else:
-            c['commit'] = False
-        c['pre_commit'] = assign_variable(c, parser, 'vcs', 'pre_commit', normpath=True)
-        c['post_commit'] = assign_variable(c, parser, 'vcs', 'post_commit', normpath=True)
-        c['repo'] = assign_variable(c, parser, 'vcs', 'repo')
-        c['cfg_ex'] = []  # For fulfill later with excluded files list
-        c['cfg_frz'] = []  # For fulfill later with force include files list
-        c['cfg_in'] = []  # For fulfill later with include files list
-
-        # Check "d_dest" directory requirements
-        if (not arg.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
-            sys.exit('ERROR: \"'+ str(c['d_dest']) +'\" is not a valid \"d_dest\" directory or is not initialized.\nPlease, try to execute \"keepconf -i -f '+ file_conf +'\"')
+        # Set configuration fron file
+        c = set_conf(arg, index, file_conf)
 
         # Run init option
         if arg.gitinit:
