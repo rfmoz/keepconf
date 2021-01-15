@@ -647,11 +647,13 @@ def main():
         conf_flst = sorted(glob.glob(arg.config + '*.cfg'))
 
     # Almost one configuration file
-    if len(conf_list) == 0:
-        logging.error('Any valid configuration files for use')
+    if conf_flst:
+        logging.info('Files for process: ' + str(conf_flst))
+    else
+        logging.error('Any configuration files for use')
 
     # Process each configuration file
-    for index, file_conf in enumerate(conf_list):
+    for index, file_conf in enumerate(conf_flst):
 
         # Init time counters
         timec = {'start': time.time(), 'fetch': None, 'commit': None}
