@@ -608,7 +608,7 @@ def assign_variable(c, parser, section, key, normpath=False):
     return value
 
 
-def set_conf(arg, index, file_conf):
+def set_conf(arg, file_conf):
     """Set configuration values"""
 
     # Default values
@@ -631,7 +631,7 @@ def set_conf(arg, index, file_conf):
         'post_commit': False,
         'repo': 'local'}
 
-    print('- - -')
+    print('- - -\n- -')
     print('- Processing: '+ str(file_conf))
 
     # Parse options in config file
@@ -699,14 +699,10 @@ def main():
         logging.info('Config path is a folder')
         conf_flst = sorted(glob.glob(arg.config + '*.cfg'))
 
-    # Almost one configuration file
-    if conf_flst:
-        logging.info('Files for process: ' + str(conf_flst))
-    else:
-        logging.error('Any configuration files for use')
+    logging.info('Files for process: ' + str(len(conf_flst)))
 
     # Process each configuration file
-    for index, file_conf in enumerate(conf_flst):
+    for file_conf in conf_flst:
 
         # Init time counters
         timec = {'start': time.time(), 'fetch': None, 'commit': None}
@@ -715,7 +711,7 @@ def main():
         hosts = {'ok': [], 'bad': []}
 
         # Set configuration fron file
-        c = set_conf(arg, index, file_conf)
+        c = set_conf(arg, file_conf)
 
         # Run init option
         if arg.gitinit:
