@@ -24,7 +24,6 @@ from distutils.dir_util import mkpath
 
 __version__ = '2.2.00'
 __config__ = '/etc/keepconf/'  # default configuration path
-VERBOSE = 0
 
 # Handling SIGPIPE to terminate
 signal.signal(signal.SIGPIPE, signal.SIG_DFL)
@@ -81,7 +80,7 @@ def get_arguments():
         dest='verbose',
         default=False,
         action='store_true',
-        help='verbose output'
+        help='verbose debug output'
     )
     parser.add_argument(
         '-V', '--version',
@@ -89,19 +88,14 @@ def get_arguments():
         version='keepconf version ' + (__version__),
         help='show version'
     )
-    options = parser.parse_args()
+    arg = parser.parse_args()
 
-    def enable_verbose(*_):
+    if arg.verbose:
         """Enable verbose mode"""
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
-        global VERBOSE
-        VERBOSE = 1
+        print(vars(arg))
 
-    if options.verbose:
-        enable_verbose()
-        print(vars(options))
-
-    return options
+    return arg
 
 
 def process_folder(str_folder, hosts, dest):
@@ -420,10 +414,10 @@ def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, t
         print('- Monitor file: '+ str(mon_file))
 
 
-def fetch_process(c, options):
+def fetch_process(c, arg):
     ''' Fetch files from hosts'''
 
-    def rsync_host(c, options, f_walk, hosts_ok, hosts_bad):
+    def rsync_host(c, arg, f_walk, hosts_ok, hosts_bad):
         ''' Construct rsync call and fetch host'''
         # Define path name for store fetched files
         final_path = os.path.join(c['d_dest'], host)
@@ -439,7 +433,7 @@ def fetch_process(c, options):
 
         # Construct ssh options:
         # If verbose is not used, quiet ssh mode
-        if VERBOSE:
+        if arg.verbose:
             ssh_loglevel = ''
         else:
             ssh_loglevel = ' -o LogLevel=quiet'
@@ -464,7 +458,7 @@ def fetch_process(c, options):
 
         # Execute rsync and construct list with ok and bad hosts
         sys.stdout.flush()
-        if (call_out(rsync_call, options.silent, c['d_dest'])) == 0:
+        if (call_out(rsync_call, arg.silent, c['d_dest'])) == 0:
             hosts_ok.append(host)
         else:
             hosts_bad.append(host)
@@ -539,10 +533,10 @@ def fetch_process(c, options):
 
     # For each hostname in the list, rsync it.
     for host in c['hosts']:
-        rsync_host(c, options, f_walk, hosts_ok, hosts_bad)
+        rsync_host(c, arg, f_walk, hosts_ok, hosts_bad)
 
     # Don't delete file if verbose mode is enabled (for easy debug)
-    if VERBOSE:
+    if arg.verbose:
         logging.info('WARNING temporary files not deleted in verbose mode')
     else:
         os.remove(f_tmp_walk)
@@ -555,7 +549,7 @@ def fetch_process(c, options):
     return hosts_ok, hosts_bad
 
 
-def fetch_commit(c, options, hosts_ok, hosts_bad):
+def fetch_commit(c, arg, hosts_ok, hosts_bad):
     ''' Commit files fetched'''
 
     test_repo_dir(c['d_dest'], c['commit'])
@@ -566,8 +560,8 @@ def fetch_commit(c, options, hosts_ok, hosts_bad):
         process_folder(c['pre_commit'], c['hosts'], c['d_dest'])
 
     # Parse message option. Use default or custom.
-    if options.message:
-        message = 'Keepconf: ' + options.message
+    if arg.message:
+        message = 'Keepconf: ' + arg.message
     else:
         message = 'Keepconf commit at '+time.strftime('%H:%M:%S - %A/%B/%Y')
         if hosts_ok or hosts_bad:
@@ -578,15 +572,15 @@ def fetch_commit(c, options, hosts_ok, hosts_bad):
     sys.stdout.flush()
     if c['repo'] == 'local':
         print('- Committing into local repository')
-        call_out(('git', 'add', c['d_dest']+'*'), options.xilent, c['d_dest'])
-        call_out(('git', 'commit', '-am', message), options.xilent, c['d_dest'])
+        call_out(('git', 'add', c['d_dest']+'*'), arg.xilent, c['d_dest'])
+        call_out(('git', 'commit', '-am', message), arg.xilent, c['d_dest'])
     else:
         # print('- Updating remote repository')
-        # call_out(('git', 'pull'), options.xilent, cwd=c['d_dest'])
+        # call_out(('git', 'pull'), arg.xilent, cwd=c['d_dest'])
         print('- Committing into remote repository')
-        call_out(('git', 'add', '--all'), options.xilent, c['d_dest'])
-        call_out(('git', 'commit', '-am', message), options.xilent, c['d_dest'])
-        call_out(('git', 'push'), options.xilent, c['d_dest'])
+        call_out(('git', 'add', '--all'), arg.xilent, c['d_dest'])
+        call_out(('git', 'commit', '-am', message), arg.xilent, c['d_dest'])
+        call_out(('git', 'push'), arg.xilent, c['d_dest'])
     sys.stdout.flush()
 
     # Execute post-commit.d
@@ -637,18 +631,17 @@ def main():
         'repo': 'local'}
 
     # Get arguments from command line
-    options = get_arguments()
+    arg = get_arguments()
 
-    logging.info('Parsing configuration path: '+ options.config)
+    logging.info('Parsing configuration path: '+ arg.config)
 
     # Test if config path is a file or a folder, in that case, retrieve all .cfg files
-    if os.path.isfile(str(options.config)):
+    if os.path.isfile(str(arg.config)):
         logging.info('Config path is a file')
-        conf_list = (options.config,)
+        conf_flst = (arg.config,)
     else:
         logging.info('Config path is a folder')
-        conf_list = sorted(glob.glob(options.config + '*.cfg'))
-    logging.info('Files for process: ' + str(conf_list))
+        conf_flst = sorted(glob.glob(arg.config + '*.cfg'))
 
     # Almost one configuration file
     if len(conf_list) == 0:
@@ -691,7 +684,7 @@ def main():
                 line = (sanitize(line))
                 c['files'].append(line)
         c['d_monitor'] = assign_variable(c, parser, 'main', 'd_monitor')
-        if options.commitonly:
+        if arg.commitonly:
             c['fetch'] = assign_variable(c, parser, 'sync', 'fetch')
         else:
             c['fetch'] = False
@@ -702,7 +695,7 @@ def main():
         c['rsync_key'] = assign_variable(c, parser, 'sync', 'rsync_key')
         c['rsync_port'] = assign_variable(c, parser, 'sync', 'rsync_port')
         c['rsync_opt'] = assign_variable(c, parser, 'sync', 'rsync_opt')
-        if options.commit:
+        if arg.commit:
             c['commit'] = assign_variable(c, parser, 'vcs', 'commit')
         else:
             c['commit'] = False
@@ -714,11 +707,11 @@ def main():
         c['cfg_in'] = []  # For fulfill later with include files list
 
         # Check "d_dest" directory requirements
-        if (not options.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
+        if (not arg.gitinit and c['commit']) and not os.path.isdir(str(c['d_dest'])):
             sys.exit('ERROR: \"'+ str(c['d_dest']) +'\" is not a valid \"d_dest\" directory or is not initialized.\nPlease, try to execute \"keepconf -i -f '+ file_conf +'\"')
 
         # Run init option
-        if options.gitinit:
+        if arg.gitinit:
             git_init(c)
 
         # Run fetch (no commit) option
@@ -728,7 +721,7 @@ def main():
             fetch_time = time.time()
 
             # Fetching process. Report ok and bad host list
-            hosts_ok, hosts_bad = fetch_process(c, options)
+            hosts_ok, hosts_bad = fetch_process(c, arg)
 
             # Register total fetch time
             time_fetched = time.time() - fetch_time
@@ -743,7 +736,7 @@ def main():
             commit_time = time.time()
 
             # Commit process
-            fetch_commit(c, options, hosts_ok, hosts_bad)
+            fetch_commit(c, arg, hosts_ok, hosts_bad)
 
             # Register total commit time
             time_committed = time.time() - commit_time
