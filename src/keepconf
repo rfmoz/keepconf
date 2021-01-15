@@ -268,8 +268,8 @@ def git_init(c):
     if c['repo'] == 'local':
         if os.path.isdir(os.path.join(c['d_dest'], '.git')):
             print('WARNING: A .git folder exists inside '+ c['d_dest'] +' directory!')
-            if not yes_or_not('Do you want to initialize an exiting repository?'):
-                logging.info('Avoid initializating folder with .git directory')
+            if not yes_or_not('Do you want to initialize an existing repository?'):
+                logging.info('Avoid initialize folder with .git directory')
                 sys.exit(0)
         sys.stdout.flush()
         call(('git', 'init', c['d_dest']))
@@ -281,13 +281,13 @@ def git_init(c):
             if os.listdir(c['d_dest']) != []:
                 print('WARNING: Destination directory exists and is not empty!')
                 print('Please, fix '+c['d_dest'])
-                if not yes_or_not('Do you already did it, continue?'):
-                    logging.info('Avoid clonning repository into destination folder: '+c['d_dest'])
+                if not yes_or_not('Is it done?, continue?'):
+                    logging.info('Avoid clone repository into destination folder: '+c['d_dest'])
                     sys.exit(0)
         else:
-            logging.info('Creating directory'+ c['d_dest'])
+            logging.info('Making directory '+ c['d_dest'])
             os.makedirs(c['d_dest'])
-        print('Clonning repository...')
+        print('Cloning repository...')
         sys.stdout.flush()
         call(('git', 'clone', c['repo'], c['d_dest']))
         sys.stdout.flush()
@@ -297,6 +297,7 @@ def git_init(c):
 
     # Exit after initialize
     sys.exit(0)
+
 
 def get_files_list(c, key1, key2):
     '''Get content of a list of files readed from config variable'''
