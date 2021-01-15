@@ -348,13 +348,13 @@ def get_files_list(c, key1, key2):
     return values
 
 
-def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, timec):
+def stats_and_csv(c, file_conf, hosts, timec):
     '''Print stats and write csv'''
     print('- ')
 
     if c['fetch']:
-        print('- Hosts rsync\'ed: ' +'['+ str(len(hosts_ok)) +'] '+ ', '.join(hosts_ok))
-        print('- Hosts not rsync\'ed: ' +'['+ str(len(hosts_bad)) +'] '+ ', '.join(hosts_bad))
+        print('- Hosts rsync\'ed: ' +'['+ str(len(hosts['ok'])) +'] '+ ', '.join(hosts['ok']))
+        print('- Hosts not rsync\'ed: ' +'['+ str(len(hosts['bad'])) +'] '+ ', '.join(hosts['bad']))
         print('- Fetched in: %.2f seconds' % timec['fetch'])
     if c['commit'] and c['repo']:
         print('- Committed in: %.2f seconds' % timec['commit'])
@@ -381,12 +381,12 @@ def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, timec):
             pass
 
         # Create csv values
-        if hosts_bad:
-            hosts_bad_list = ","+ ','.join(['\"'+ x +'\"' for x in hosts_bad])
+        if hosts['bad']:
+            hosts_bad_list = ","+ ','.join(['\"'+ x +'\"' for x in hosts['bad']])
         else:
             hosts_bad_list = ''
-        if hosts_ok:
-            hosts_ok_list = "," +','.join(['\"'+ x +'\"' for x in hosts_ok])
+        if hosts['ok']:
+            hosts_ok_list = "," +','.join(['\"'+ x +'\"' for x in hosts['ok']])
         else:
             hosts_ok_list = ''
 
@@ -397,11 +397,11 @@ def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, timec):
             except:
                 file_monitor.write('\"BadCfgFileName\"\n')
             try:
-                file_monitor.write('\"OK\",\"' + str(len(hosts_ok)) + '\"' + hosts_ok_list + '\n')
+                file_monitor.write('\"OK\",\"' + str(len(hosts['ok'])) + '\"' + hosts_ok_list + '\n')
             except:
                 file_monitor.write('\"OK\",\"0\"\n')
             try:
-                file_monitor.write('\"BAD\",\"' + str(len(hosts_bad)) + '\"' + hosts_bad_list + '\n')
+                file_monitor.write('\"BAD\",\"' + str(len(hosts['bad'])) + '\"' + hosts_bad_list + '\n')
             except:
                 file_monitor.write('\"BAD\",\"0\"\n')
             try:
@@ -723,8 +723,13 @@ def main():
             # Start timer for fetch
             start_fetch_time = time.time()
 
+            hosts = {'ok': None, 'bad': None}
+
             # Fetching process. Report ok and bad host list
             hosts_ok, hosts_bad = fetch_process(c, arg)
+
+            hosts['ok'] = hosts_ok
+            hosts['bad'] = hosts_bad
 
             # Register total fetch time
             timec['fetch'] = time.time() - start_fetch_time
@@ -738,8 +743,6 @@ def main():
             # Start timer for commit
             start_commit_time = time.time()
 
-            hosts = {'ok': hosts_ok, 'bad': hosts_bad}
-
             # Commit process
             fetch_commit(c, arg, hosts)
 
@@ -751,7 +754,7 @@ def main():
 
         # Run stats
         if c['fetch'] or (c['commit'] and c['repo']):
-            stats_and_csv(c, file_conf, hosts_ok, hosts_bad, timec)
+            stats_and_csv(c, file_conf, hosts, timec)
 
 if __name__ == "__main__":
     main()
