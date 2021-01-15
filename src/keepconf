@@ -348,18 +348,18 @@ def get_files_list(c, key1, key2):
     return values
 
 
-def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, time_committed):
+def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, timec):
     '''Print stats and write csv'''
     print('- ')
 
     if c['fetch']:
         print('- Hosts rsync\'ed: ' +'['+ str(len(hosts_ok)) +'] '+ ', '.join(hosts_ok))
         print('- Hosts not rsync\'ed: ' +'['+ str(len(hosts_bad)) +'] '+ ', '.join(hosts_bad))
-        print('- Fetched in: %.2f seconds' % time_fetched)
+        print('- Fetched in: %.2f seconds' % timec['fetch'])
     if c['commit'] and c['repo']:
-        print('- Committed in: %.2f seconds' % time_committed)
+        print('- Committed in: %.2f seconds' % timec['commit'])
 
-    total_time = time.time() - start_time
+    total_time = time.time() - timec['start']
     if c['fetch'] or c['commit']:
         print('- Completed in: %.2f seconds' % total_time)
 
@@ -405,11 +405,11 @@ def stats_and_csv(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, t
             except:
                 file_monitor.write('\"BAD\",\"0\"\n')
             try:
-                file_monitor.write('\"FETCH-T\",\"%.2f' % time_fetched + '\"\n')
+                file_monitor.write('\"FETCH-T\",\"%.2f' % timec['fetch'] + '\"\n')
             except:
                 file_monitor.write('\"FETCH-T\",\"0\"\n')
             try:
-                file_monitor.write('\"COMMIT-T\",\"%.2f' % time_committed + '\"\n')
+                file_monitor.write('\"COMMIT-T\",\"%.2f' % timec['commit'] + '\"\n')
             except:
                 file_monitor.write('\"COMMIT-T\",\"0\"\n')
             file_monitor.write('\"TOTAL-T\",\"%.2f' % total_time + '\"\n')
@@ -653,10 +653,8 @@ def main():
     # Process each configuration file
     for index, file_conf in enumerate(conf_list):
 
-        # Start timer for the whole process
-        start_time = time.time()
-        time_fetched = ''
-        time_committed = ''
+        # Init time counters
+        timec = {'start': time.time(), 'fetch': None, 'commit': None}
 
         # Set empty values for hosts
         hosts_ok = ''
@@ -721,35 +719,35 @@ def main():
         if c['fetch']:
 
             # Start timer for fetch
-            fetch_time = time.time()
+            start_fetch_time = time.time()
 
             # Fetching process. Report ok and bad host list
             hosts_ok, hosts_bad = fetch_process(c, arg)
 
             # Register total fetch time
-            time_fetched = time.time() - fetch_time
+            timec['fetch'] = time.time() - start_fetch_time
 
         else:
-            logging.info('Avoid fetching files')
+            logging.info('Skip fetch files')
 
         # Run commit option
         if c['commit'] and c['repo']:
 
             # Start timer for commit
-            commit_time = time.time()
+            start_commit_time = time.time()
 
             # Commit process
             fetch_commit(c, arg, hosts_ok, hosts_bad)
 
             # Register total commit time
-            time_committed = time.time() - commit_time
+            timec['commit'] = time.time() - start_commit_time
 
         else:
-            logging.info('Avoid committing changes')
+            logging.info('Skip commit changes')
 
         # Run stats
         if c['fetch'] or (c['commit'] and c['repo']):
-            stats_and_csv(c, file_conf, hosts_ok, hosts_bad, start_time, time_fetched, time_committed)
+            stats_and_csv(c, file_conf, hosts_ok, hosts_bad, timec)
 
 if __name__ == "__main__":
     main()
