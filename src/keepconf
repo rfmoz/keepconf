@@ -552,7 +552,7 @@ def fetch_process(c, arg):
     return hosts_ok, hosts_bad
 
 
-def fetch_commit(c, arg, hosts_ok, hosts_bad):
+def fetch_commit(c, arg, hosts):
     ''' Commit files fetched'''
 
     test_repo_dir(c['d_dest'], c['commit'])
@@ -567,9 +567,9 @@ def fetch_commit(c, arg, hosts_ok, hosts_bad):
         message = 'Keepconf: ' + arg.message
     else:
         message = 'Keepconf commit at '+time.strftime('%H:%M:%S - %A/%B/%Y')
-        if hosts_ok or hosts_bad:
-            message += '\nHosts ok: '+'['+ str(len(hosts_ok))+'] ' + ', '.join(hosts_ok)
-            message += '\nHosts bad: '+'['+ str(len(hosts_bad))+'] ' + ', '.join(hosts_bad)
+        if hosts['ok'] or hosts['bad']:
+            message += '\nHosts ok: '+'['+ str(len(hosts['ok']))+'] ' + ', '.join(hosts['ok'])
+            message += '\nHosts bad: '+'['+ str(len(hosts['bad']))+'] ' + ', '.join(hosts['bad'])
 
     # Commit files into local or remote repository
     sys.stdout.flush()
@@ -649,7 +649,7 @@ def main():
     # Almost one configuration file
     if conf_flst:
         logging.info('Files for process: ' + str(conf_flst))
-    else
+    else:
         logging.error('Any configuration files for use')
 
     # Process each configuration file
@@ -738,8 +738,10 @@ def main():
             # Start timer for commit
             start_commit_time = time.time()
 
+            hosts = {'ok': hosts_ok, 'bad': hosts_bad}
+
             # Commit process
-            fetch_commit(c, arg, hosts_ok, hosts_bad)
+            fetch_commit(c, arg, hosts)
 
             # Register total commit time
             timec['commit'] = time.time() - start_commit_time
