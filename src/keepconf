@@ -417,10 +417,10 @@ def stats_and_csv(c, file_conf, hosts, timec):
         print('- Monitor file: '+ str(mon_file))
 
 
-def fetch_process(c, arg):
+def fetch_process(c, arg, hosts):
     ''' Fetch files from hosts'''
 
-    def rsync_host(c, arg, f_walk, hosts_ok, hosts_bad):
+    def rsync_host(c, arg, f_walk, hosts):
         ''' Construct rsync call and fetch host'''
         # Define path name for store fetched files
         final_path = os.path.join(c['d_dest'], host)
@@ -462,15 +462,12 @@ def fetch_process(c, arg):
         # Execute rsync and construct list with ok and bad hosts
         sys.stdout.flush()
         if (call_out(rsync_call, arg.silent, c['d_dest'])) == 0:
-            hosts_ok.append(host)
+            hosts['ok'].append(host)
         else:
-            hosts_bad.append(host)
+            hosts['bad'].append(host)
         sys.stdout.flush()
 
-        return hosts_ok, hosts_bad
-
-    # Define list for store ok and bad fetched hosts
-    hosts_ok, hosts_bad = [], []
+        return hosts['ok'], hosts['bad']
 
     test_repo_dir(c['d_dest'], c['commit'])
     print('- Fetching start')
@@ -481,7 +478,7 @@ def fetch_process(c, arg):
     # Almost one host for process
     if not c['hosts']:
         print('  Any host for fetch. Skipping')
-        return hosts_ok, hosts_bad
+        return hosts['ok'], hosts['bad']
 
     # Get list of files with filelist
     c['files'] = get_files_list(c, 'list_files', 'files')
@@ -536,7 +533,7 @@ def fetch_process(c, arg):
 
     # For each hostname in the list, rsync it.
     for host in c['hosts']:
-        rsync_host(c, arg, f_walk, hosts_ok, hosts_bad)
+        rsync_host(c, arg, f_walk, hosts)
 
     # Don't delete file if verbose mode is enabled (for easy debug)
     if arg.verbose:
@@ -549,7 +546,7 @@ def fetch_process(c, arg):
         process_folder(c['post_get'], c['hosts'], c['d_dest'])
 
     print('- Fetching done')
-    return hosts_ok, hosts_bad
+    return hosts
 
 
 def fetch_commit(c, arg, hosts):
@@ -658,9 +655,8 @@ def main():
         # Init time counters
         timec = {'start': time.time(), 'fetch': None, 'commit': None}
 
-        # Set empty values for hosts
-        hosts_ok = ''
-        hosts_bad = ''
+        # Define list for store ok and bad fetched hosts
+        hosts = {'ok': [], 'bad': []}
 
         # For more than one file, add separate banner
         if index > 0:
@@ -723,13 +719,8 @@ def main():
             # Start timer for fetch
             start_fetch_time = time.time()
 
-            hosts = {'ok': None, 'bad': None}
-
             # Fetching process. Report ok and bad host list
-            hosts_ok, hosts_bad = fetch_process(c, arg)
-
-            hosts['ok'] = hosts_ok
-            hosts['bad'] = hosts_bad
+            hosts = fetch_process(c, arg, hosts)
 
             # Register total fetch time
             timec['fetch'] = time.time() - start_fetch_time
