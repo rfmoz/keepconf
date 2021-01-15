@@ -32,10 +32,64 @@ signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 def get_arguments():
     """Get arguments from command line"""
 
-    def print_version(*_):
-        """Print version"""
-        print('keepconf version ' + __version__)
-        sys.exit(0)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f', '--conf',
+        dest='config',
+        default=__config__,
+        action='store',
+        help='configuration file/folder path',
+        metavar="PATH"
+    )
+    parser.add_argument('-i', '--init',
+        dest='gitinit',
+        default=False,
+        action='store_true',
+        help='initialize git repostory'
+    )
+    parser.add_argument('-n', '--nocommit',
+        dest='commit',
+        default=True,
+        action='store_false',
+        help='avoid commit changes'
+    )
+    parser.add_argument('-c', '--commitonly',
+        dest='commitonly',
+        default=True,
+        action='store_false',
+        help='only commit changes'
+    )
+    parser.add_argument('-m', '--message',
+        dest='message',
+        default=False,
+        action='store',
+        help='commit message',
+        metavar="TEXT"
+    )
+    parser.add_argument('-s', '--silent',
+        dest='silent',
+        default=False,
+        action='store_true',
+        help='silent fetching output'
+    )
+    parser.add_argument('-x', '--xilent',
+        dest='xilent',
+        default=False,
+        action='store_true',
+        help='silent commit output'
+    )
+    parser.add_argument('-v', '--verbose',
+        dest='verbose',
+        default=False,
+        action='store_true',
+        help='verbose output'
+    )
+    parser.add_argument(
+        '-V', '--version',
+        action='version',
+        version='keepconf version ' + (__version__),
+        help='show version'
+    )
+    options = parser.parse_args()
 
     def enable_verbose(*_):
         """Enable verbose mode"""
@@ -43,62 +97,9 @@ def get_arguments():
         global VERBOSE
         VERBOSE = 1
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--conf',
-                        dest='config',
-                        default=__config__,
-                        action='store',
-                        help='configuration file/folder path',
-                        metavar="PATH")
-    parser.add_argument('-i', '--init',
-                        dest='gitinit',
-                        default=False,
-                        action='store_true',
-                        help='initialize git repostory')
-    parser.add_argument('-n', '--nocommit',
-                        dest='commit',
-                        default=True,
-                        action='store_false',
-                        help='avoid commit changes')
-    parser.add_argument('-c', '--commitonly',
-                        dest='commitonly',
-                        default=True,
-                        action='store_false',
-                        help='only commit changes')
-    parser.add_argument('-m', '--message',
-                        dest='message',
-                        default=False,
-                        action='store',
-                        help='commit message',
-                        metavar="TEXT")
-    parser.add_argument('-s', '--silent',
-                        dest='silent',
-                        default=False,
-                        action='store_true',
-                        help='silent fetching output')
-    parser.add_argument('-x', '--xilent',
-                        dest='xilent',
-                        default=False,
-                        action='store_true',
-                        help='silent commit output')
-    parser.add_argument('-v', '--verbose',
-                        dest='verbose',
-                        default=False,
-                        action='store_true',
-                        help='verbose output')
-    parser.add_argument('-V', '--version',
-                        dest='version',
-                        default=False,
-                        action='store_true',
-                        help='show version')
-    options = parser.parse_args()
-
     if options.verbose:
         enable_verbose()
         print(vars(options))
-
-    if options.version:
-        print_version()
 
     return options
 
