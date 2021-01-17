@@ -111,15 +111,15 @@ def process_folder(folder_name, hosts, dest):
         logging.info('%s not exists', str(folder_name))
         return
 
-    print('- Finding files in ' + folder_name)
+    print('- Finding exec files in ' + folder_name)
 
     # Get all files inside the folder
     folder_files = sorted(glob.glob(folder_name + '*'))
     for b in folder_files:
-        print('- Processing:', b)
 
         # Only execute executable files
         if os.path.isfile(b) and os.access(b, os.X_OK):
+            print('- Processing:', b)
             sys.stdout.flush()
             # File are called with:
             #  arg1: comma separated list of hosts
@@ -127,7 +127,7 @@ def process_folder(folder_name, hosts, dest):
             call([b, str(",".join(hosts)), str(dest)])
             sys.stdout.flush()
         else:
-            logging.warning('WARNING nothing done in non executable file %s', str(b))
+            logging.info('WARNING nothing done in non executable file %s', str(b))
 
 
 # The following two functions are written by Chin Fang <fangchin@zettar.com>
@@ -260,7 +260,7 @@ def git_init(c):
     # Local repository
     if c['repo'] == 'local':
         if not os.path.isdir(os.path.join(c['d_dest'], '.git')):
-            print('- Initialize local repository on %s', str(c['d_dest']))
+            print('- Initialize local repository on :' + str(c['d_dest']))
             call(('git', 'init', c['d_dest']))
         else:
             logging.info('Local repository exists on %s', str(c['d_dest']))
@@ -269,7 +269,7 @@ def git_init(c):
     # Remote repository
     elif c['repo']:
         if not os.path.isdir(c['d_dest']):
-            print('- Making directory for repository on %s', str(c['d_dest']))
+            print('- Making directory for repository on :' + str(c['d_dest']))
             os.makedirs(c['d_dest'])
         print('- Cloning repository...')
         sys.stdout.flush()
