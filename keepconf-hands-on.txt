@@ -138,10 +138,10 @@ backman@web1:~$
 root@backups:~# bash <(curl -Ls https://raw.githubusercontent.com/rfrail3/keepconf/master/keepconf-install.sh)
 
 
-+ Be sure that git is configured correctly with your name an email:
++ Be sure that git is configured correctly with your name an email. Maybe you have already set them:
 
-root@backups:~# git config --global user.email "you@example.com"
-root@backups:~# git config --global user.name "Your Name"
+root@backups:~# git config user.email || git config --global user.email "you@example.com"
+root@backups:~# git config user.name || git config --global user.name "Your Name"
 
 
 + Set the default backup user for keepconf, uncomment the rsync_user line and change the user to "backman":
@@ -182,7 +182,7 @@ root@backups:~# keepconf -s
 - - -
 - -
 - Processing: /etc/keepconf/keepconf.cfg
-- Initialize local repository on :/var/keepconf/hosts/
+- Initialize local repository on: /var/keepconf/hosts/
 Initialized empty Git repository in /var/keepconf/hosts/.git/
 - -
 - Fetching start
@@ -202,7 +202,8 @@ Initialized empty Git repository in /var/keepconf/hosts/.git/
 - Committing into local repository
 [master (root-commit) f8cc8aa] Keepconf commit at 13:27:21 - Tuesday/August/2015 Hosts ok: [1] web1.example.com Hosts bad: [0]
  Committer: root <root@backups.example.com>
- 2 files changed, 8359 insertions(+)
+ 3 files changed, 8359 insertions(+)
+ create mode 100644 .gitignore
  create mode 100644 web1.example.com/etc/passwd
  create mode 100644 web1.example.com/var/lib/dpkg/status
 - Finding files in /etc/keepconf/post-commit.d/
