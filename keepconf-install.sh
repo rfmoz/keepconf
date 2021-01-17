@@ -79,7 +79,8 @@ cp -r ${F_TMP1}/src/post-get.d/* ${D_CNF}/post-get.d/
 cp -r ${F_TMP1}/src/pre-commit.d/* ${D_CNF}/pre-commit.d/
 cp -r ${F_TMP1}/src/hosts/* ${D_CNF}/hosts/
 cp -r ${F_TMP1}/src/files/* ${D_CNF}/files/
-chmod 744 ${D_CNF}/post-get.d/*
+chmod 644 ${D_CNF}/post-*/*txt
+chmod 644 ${D_CNF}/pre-*/*txt
 chmod 744 ${D_BIN}/keepconf
 
 cd ${D_CNF} && ls
