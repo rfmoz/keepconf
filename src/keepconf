@@ -119,15 +119,15 @@ def process_folder(folder_name, hosts, dest):
         print('- Processing:', b)
 
         # Only execute executable files
-        if not (os.path.isfile(b) and os.access(b, os.X_OK)):
-            logging.warning('WARNING nothing done in non executable file %s', str(b))
-        else:
+        if os.path.isfile(b) and os.access(b, os.X_OK):
             sys.stdout.flush()
             # File are called with:
             #  arg1: comma separated list of hosts
             #  arg2: "d_dest" variable
             call([b, str(",".join(hosts)), str(dest)])
             sys.stdout.flush()
+        else:
+            logging.warning('WARNING nothing done in non executable file %s', str(b))
 
 
 # The following two functions are written by Chin Fang <fangchin@zettar.com>
@@ -288,12 +288,12 @@ def get_files_list(c, key1, key2):
         '''Extract and clean lines from list'''
         for line in elements:
             try:
-                lne = sanitize(line)
-                if detect_range(lne):
-                    logging.info('Range detected: %s', str(lne))
-                    values = values + expand_range(lne)
+                nel = re.split(',', sanitize(line))[0]  # Avoid comma separated lists
+                if detect_range(nel):
+                    logging.info('Range detected: %s', str(nel))
+                    values = values + expand_range(nel)
                 else:
-                    values.append(lne)
+                    values.append(nel)
             except:
                 continue
         return values
@@ -306,7 +306,7 @@ def get_files_list(c, key1, key2):
 
     # For each file in the list
     for file_var in c[key1].replace(" ", "").split(',', 1):
-        logging.info('Reading %s: %s', str(key2), str(file_var))
+        print('- Reading '+ str(key2) +' list: '+ str(file_var))
 
         # test if it is a file and open it
         if os.path.isfile(file_var):
@@ -595,13 +595,13 @@ def set_conf(arg, file_conf):
     c['hosts'] = []  # next fulfill with hostname list
     for line, _ in parser.items('hosts'):
         if not line == 'list_hosts':
-            line = re.split(',', sanitize(line))[0]
+            line = sanitize(line)
             c['hosts'].append(line)
     c['list_files'] = set_var(c, parser, 'files', 'list_files')
     c['files'] = []  # next fulfill with files list
     for line, _ in parser.items('files'):
         if not line == 'list_files':
-            line = re.split(',', sanitize(line))[0]
+            line = sanitize(line)
             c['files'].append(line)
     c['d_monitor'] = set_var(c, parser, 'main', 'd_monitor')
     if arg.commitonly:
