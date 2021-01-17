@@ -160,22 +160,41 @@ web1.example.com
 /etc/passwd
 /var/lib/dpkg/status
 
+
++ Set both files on the variables inside "/etc/keepconf/keepconf.cfg" and remove sample host and files list there:
+
+list_hosts = /etc/keepconf/hosts/web-servers.lst
+
+list_files = /etc/keepconf/files/web-files.lst
+
+
+
 + Run it! (In this example, with "-s" for reduce output): 
 
 root@backups:~# keepconf -s
+- - -
+- -
 - Processing: /etc/keepconf/keepconf.cfg
 - Fetching start
+- Reading hosts list: /etc/keepconf/hosts/web-servers.lst
+- Reading files list: /etc/keepconf/files/web-files.lst
+- Finding exec files in /etc/keepconf/pre-get.d/
 - Fetching host: web1.example.com
-- Finding files in /etc/keepconf/post-get.d/
+- Finding exec files in /etc/keepconf/post-get.d/
 - Processing: /etc/keepconf/post-get.d/01-remove-binary
 - Fetching done
+- -
 - Committing start
+- Finding files in /etc/keepconf/pre-commit.d/
+- Processing: /etc/keepconf/pre-commit.d/01-add-git-ignore
+  Script -> Adding files to .gitignore
 - Committing into local repository
 [master (root-commit) f8cc8aa] Keepconf commit at 13:27:21 - Tuesday/August/2015 Hosts ok: [1] web1.example.com Hosts bad: [0]
  Committer: root <root@backups.example.com>
  2 files changed, 8359 insertions(+)
  create mode 100644 web1.example.com/etc/passwd
  create mode 100644 web1.example.com/var/lib/dpkg/status
+- Finding files in /etc/keepconf/post-commit.d/
 - Committing done
 - 
 - Hosts rsync'ed: [1] web1.example.com
@@ -183,6 +202,7 @@ root@backups:~# keepconf -s
 - Fetched in: 0.44 seconds
 - Committed in: 0.04 seconds
 - Completed in: 0.48 seconds
+- Monitor file: /var/tmp/keepconf/keepconf.csv
 
 
 + Now, the files from "web1.example.com" are yet inside "backups.example.com" located where 
@@ -317,6 +337,6 @@ Is it possible to have more than one configuration file, for example, each one f
 
 root@backups:~# cp /etc/keepconf/keepconf.cfg /etc/keepconf/keepconf-dev.cfg
 
-+ Change whatever you consider for the new enviroment.
++ Change whatever you consider for the new enviroment. Avoid mix folders and repositories.
 
-+ Run "keepconf", both files will be parsed and process.
++ Run "keepconf", both files will be parsed and process using their configured values.
