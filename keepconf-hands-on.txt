@@ -138,6 +138,12 @@ backman@web1:~$
 root@backups:~# bash <(curl -Ls https://raw.githubusercontent.com/rfrail3/keepconf/master/keepconf-install.sh)
 
 
++ Be sure that git is configured correctly with your name an email:
+
+root@backups:~# git config --global user.email "you@example.com"
+root@backups:~# git config --global user.name "Your Name"
+
+
 + Set the default backup user for keepconf, uncomment the rsync_user line and change the user to "backman":
 
 root@backups:~# vi /etc/keepconf/keepconf.cfg
@@ -147,7 +153,7 @@ root@backups:~# vi /etc/keepconf/keepconf.cfg
 
 + Remove the example conf files, you won't need it:
 
-root@backups:~# rm -rf /etc/keepconf/hosts/*
+root@backups:~# rm /etc/keepconf/hosts/*
 
 
 + Create a file called "/etc/keepconf/hosts/web-servers.lst" and add the following example lines:
@@ -161,7 +167,8 @@ web1.example.com
 /var/lib/dpkg/status
 
 
-+ Set both files on the variables inside "/etc/keepconf/keepconf.cfg" and remove sample host and files list there:
++ Set both files on the variables inside "/etc/keepconf/keepconf.cfg" and remove 
+'# Or / And sample .. list' content next to them too:
 
 list_hosts = /etc/keepconf/hosts/web-servers.lst
 
@@ -175,13 +182,17 @@ root@backups:~# keepconf -s
 - - -
 - -
 - Processing: /etc/keepconf/keepconf.cfg
+- Initialize local repository on :/var/keepconf/hosts/
+Initialized empty Git repository in /var/keepconf/hosts/.git/
+- -
 - Fetching start
 - Reading hosts list: /etc/keepconf/hosts/web-servers.lst
 - Reading files list: /etc/keepconf/files/web-files.lst
-- Finding exec files in /etc/keepconf/pre-get.d/
+- Finding exec files in: /etc/keepconf/pre-get.d/
 - Fetching host: web1.example.com
-- Finding exec files in /etc/keepconf/post-get.d/
+- Finding exec files in: /etc/keepconf/post-get.d/
 - Processing: /etc/keepconf/post-get.d/01-remove-binary
+  Script -> Removing binary files
 - Fetching done
 - -
 - Committing start
