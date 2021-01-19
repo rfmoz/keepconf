@@ -1,6 +1,7 @@
 keepconf (2.2.0) stable; urgency=low
 
   * Auto initialize repositories. Not needed -i at begin.
+  * Munin plugin replaced by Prometheus and Grafana.
   * Refactor and update code.
   * Update documentation.
 
