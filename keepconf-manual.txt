@@ -186,7 +186,7 @@ of them.
            d_dest = /var/keepconf/hosts/
 
   d_monitor=
-    Directory for store the Prometheus monitor files. The name of the files is
+    Directory for store the .csv monitor files. The name of the files is
     the same that the configuration files except the extension.
 
     Examples:
@@ -500,8 +500,9 @@ at the beginning of a line.
 By default, paths ended in '/' fetch all content inside it only, if ends with
 '/*' fetch all content inside it recursively.
 
-There is a Grafana dashboard for graph the Prometheus monitor files, look for
-it into the grafana-dashboard folder in this repo.
+The monitor csv files can be converted with a script to Prometheus (textfile
+collector), there is a Grafana dashboard for graph the values, look for
+both into the grafana-dashboard folder in this repo.
 
 Inside the rsync call, the arguments StrictHostKeyChecking=no and 
 UserKnownHostsFile=/dev/null are passed for avoid annoying startup issues
