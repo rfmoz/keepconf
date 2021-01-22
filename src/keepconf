@@ -194,8 +194,11 @@ def sanitize(text_value):
     """Remove especial characters"""
 
     # Remove excluded characters and clean line
-    excluded = "[\'\";|<>]"
-    return re.sub(excluded, '', (re.split('#|;', text_value)[0].strip()))
+    resultd = re.sub("[\'\";|<>]", '', (re.split('#|;', text_value)[0].strip()))
+    if resultd:
+        return resultd
+    else:
+        logging.info('Excluded by sanitize: ' + text_value.strip())
 
 
 def call_out(call_, silent_=None, cwd_='/tmp'):
