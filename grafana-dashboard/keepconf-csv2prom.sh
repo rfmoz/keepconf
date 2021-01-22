@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # This script converts .csv files from Keepconf monitor to Prometheus textfile collector format.
+# Add it to a cron schedule execution after keepconf run.
 
 # Origin Keepconf path
 dkeep='/var/tmp/keepconf/'
