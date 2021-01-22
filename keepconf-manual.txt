@@ -431,10 +431,10 @@ git as all other content.
 "post_get" for call an other version control system, like subversion.
 
 - Put a script inside "post_commit" directory for do some task after each
-execution.
+execution. Sending an email as example.
 
 - Delete especial and binary files for avoid commit them. Actually this script
-it is included into "post-commit.d" directory at the github repo.
+it is included into "pre-commit.d" directory at the github repo.
 
 Full path definition is required for this variables.
 
