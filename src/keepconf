@@ -274,9 +274,12 @@ def git_init(c):
         if not os.path.isdir(c['d_dest']):
             print('- Making directory for repository on: ' + str(c['d_dest']))
             os.makedirs(c['d_dest'])
-        print('- Cloning repository...')
-        sys.stdout.flush()
-        call(('git', 'clone', c['repo'], c['d_dest']))
+        if not os.path.isdir(os.path.join(c['d_dest'], '.git')):
+            print('- Cloning repository...')
+            sys.stdout.flush()
+            call(('git', 'clone', c['repo'], c['d_dest']))
+        else:
+            logging.info('Remote repository exists on %s', str(c['d_dest']))
         sys.stdout.flush()
 
     else:
