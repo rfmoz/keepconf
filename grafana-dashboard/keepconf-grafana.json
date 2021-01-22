@@ -47,7 +47,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1611070093315,
+  "iteration": 1611300719535,
   "links": [],
   "panels": [
     {
@@ -70,15 +70,17 @@
         "alignAsTable": true,
         "avg": false,
         "current": true,
+        "hideEmpty": false,
         "max": true,
         "min": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "null as zero",
       "options": {
         "dataLinks": []
       },
@@ -88,26 +90,26 @@
       "renderer": "flot",
       "seriesOverrides": [
         {
-          "$$hashKey": "object:1477",
+          "$$hashKey": "object:750",
           "alias": "/BAD.*/",
           "transform": "negative-Y"
         }
       ],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
-        {
-          "expr": "keepconf_ok{instance=\"$node\"}",
-          "interval": "",
-          "legendFormat": "OK {{file}}",
-          "refId": "A"
-        },
         {
           "expr": "keepconf_bad{instance=\"$node\"}",
           "interval": "",
           "legendFormat": "BAD {{file}}",
           "refId": "B"
+        },
+        {
+          "expr": "keepconf_ok{instance=\"$node\"}",
+          "interval": "",
+          "legendFormat": "OK {{file}}",
+          "refId": "A"
         }
       ],
       "thresholds": [],
@@ -181,7 +183,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "null as zero",
       "options": {
         "dataLinks": []
       },
@@ -284,7 +286,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "null as zero",
       "options": {
         "dataLinks": []
       },
@@ -348,6 +350,7 @@
       }
     }
   ],
+  "refresh": "1m",
   "schemaVersion": 22,
   "style": "dark",
   "tags": [],
@@ -402,5 +405,5 @@
   "variables": {
     "list": []
   },
-  "version": 7
+  "version": 10
 }
