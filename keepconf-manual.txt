@@ -2,9 +2,9 @@
                                  Keepconf
                           Configuration Manual
                          ----------------------
-                             version 2.1.10
+                             version 2.2.0
                                 Ricardo F.
-                             28/January/2018
+                             16/January/2021
 
 
 
@@ -54,7 +54,7 @@ There are only a few command line options :
 
     -h, --help            show this help message and exit
     -f PATH, --conf=PATH  configuration file/folder path
-    -i, --init            initialize git repostory
+    -i, --init            initialize git repostory only
     -n, --nocommit        avoid commit changes
     -c, --commitonly      only commit changes
     -m TEXT, --message=TEXT
@@ -86,11 +86,11 @@ There are only a few command line options :
 
 
 -i, --init
-  Initialize repository, wich will be located at "d_dest" variable defined in
-  the configuration file. Depends if "repo" variable is defined with local or
+  Initialize repository only, wich will be located at "d_dest" variable defined
+  in the configuration file. Depends if "repo" variable is defined with local or
   remote repository, a fresh init or a clone will be done. If is not defined
   or is "False", any action will be done. With multiple configuration files, 
-  define one with -f option.
+  choose one of them with -f option.
 
   Examples:
          keepconf -i (For one con figuration file)
@@ -186,7 +186,7 @@ of them.
            d_dest = /var/keepconf/hosts/
 
   d_monitor=
-    Directory for store the .csv reports of execution. The name of the files is
+    Directory for store the .csv monitor files. The name of the files is
     the same that the configuration files except the extension.
 
     Examples:
@@ -195,10 +195,11 @@ of them.
 
 
 [hosts]
-  Section for define hosts to fetch. The following are available inside here:
+  Section for define hosts to fetch. Two options are available here, list_hosts
+  variable content and/or list of hosts alone:
 
   list_hosts=
-    Path to file or comma separated list of files with the list of hosts to
+    Path to file, or comma separated list of files, with the list of hosts to
     fetch. The content of all files is merged together.
 
     Example:
@@ -206,9 +207,9 @@ of them.
           list_hosts = /etc/mydir/hosts_prod.lst, /etc/mydir/hosts_dev.lst
 
   (list of hosts)
-    Define hostsnames or IPs directly. The format is the same as described 
-    in "list_hosts and list_files format". If list_host is already present, 
-    all will be combined.
+    Define hostsnames or IPs directly, one per line. The format is the same as
+    described in "list_hosts and list_files format". If list_host is already
+    present, all will be combined.
 
     Example:
           webserver
@@ -217,11 +218,11 @@ of them.
 
 
 [files]
-  Section for define lists of files to fetch. The following are available 
-  inside here:
+  Section for define lists of files to fetch. Two options are available here,
+  list_files variable content and/or list of paths alone:
 
   list_files=
-    Path to file or comma separated list of files with the list fo files to
+    Path to file, or comma separated list of files, with the list of files to
     fetch. The content of all files is merged together.
 
     Example:
@@ -229,9 +230,9 @@ of them.
           list_files = /etc/mydir/files_default.lst, /etc/mydir/files_env1.lst
 
   (list of paths)
-    Define paths for fetch directly. The format is the same as described in 
-    "list_hosts and list_files format". If list_files is already present, all 
-    will be combined.
+    Define paths for fetch directly, one per line. The format is the same as
+    described in "list_hosts and list_files format". If list_files is already
+    present, all will be combined.
 
     Example:
           /etc/resolv.conf
@@ -384,10 +385,10 @@ For the files, any extension is valid, .lst .txt etc...
 
   Folder must ends with slash '/' character.
 
-  Its available the use of asterisk '*', interrogation '?' and ranges defined
+  It's available the use of asterisk '*', interrogation '?' and ranges defined
   into brackets [1-25] for willcard match.
 
-  Its possible to include, exclude or force paths:
+  It's possible to include, exclude or force paths:
       Include - Normal line path.
       Exclude - A '!' character must be before the path.
       Force - Based on the behaviour of rsync and how keepconf interact with
@@ -430,10 +431,10 @@ git as all other content.
 "post_get" for call an other version control system, like subversion.
 
 - Put a script inside "post_commit" directory for do some task after each
-execution.
+execution. Sending an email as example.
 
 - Delete especial and binary files for avoid commit them. Actually this script
-it is included into "post-commit.d" directory at the github repo.
+it is included into "pre-commit.d" directory at the github repo.
 
 Full path definition is required for this variables.
 
@@ -503,8 +504,9 @@ at the beginning of a line.
 By default, paths ended in '/' fetch all content inside it only, if ends with
 '/*' fetch all content inside it recursively.
 
-A munin pluging was written for graph the csv reports of keepconf, look for it
-into the keepconf github account.
+The monitor csv files can be converted with a script to Prometheus (textfile
+collector), there is a Grafana dashboard for graph the values, look for
+both into the grafana-dashboard folder in this repo.
 
 Inside the rsync call, the arguments StrictHostKeyChecking=no and 
 UserKnownHostsFile=/dev/null are passed for avoid annoying startup issues

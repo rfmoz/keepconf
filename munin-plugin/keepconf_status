@@ -43,7 +43,7 @@ if [ "$1" = "autoconf" ]; then
 
 	for j in ${LIST}; do
 		if [ ! -f ${j} ]; then
-			echo no
+			echo "no - (file '$j' is missing)"
 			exit 1
 		fi
 	done
@@ -58,7 +58,7 @@ if [ "$1" = "config" ]; then
 	echo 'graph_args --base 1000 -l 0 '
 	echo 'graph_vlabel Hosts'
 	echo 'graph_scale no'
-	echo 'graph_category keepconf'
+	echo 'graph_category other'
 	echo 'graph_info Indicate the status of a keepconf execution.'
 
 	for i in ${LIST}; do

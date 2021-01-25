@@ -3,7 +3,7 @@
                                 Hands On
                          ----------------------
                                Ricardo F.
-                            23/December/2015
+                            16/January/2021
 
 
 
@@ -53,30 +53,29 @@ uid=1001(backman) gid=1001(backman) groups=1001(backman)
 
 + Generate the ssh key for the user "backman" without passphrase:
 
-backman@web1:~$ ssh-keygen -t dsa -P ''  -f ~/.ssh/id_dsa
-Generating public/private dsa key pair.
-Created directory '/home/backman/.ssh'.
-Your identification has been saved in /home/backman/.ssh/id_dsa.
-Your public key has been saved in /home/backman/.ssh/id_dsa.pub.
+backman@web1:~$ ssh-keygen -t rsa -P ''  -f ~/.ssh/id_rsa
+Generating public/private rsa key pair.
+Your identification has been saved in /home/backman/.ssh/id_rsa.
+Your public key has been saved in /home/backman/.ssh/id_rsa.pub.
 The key fingerprint is:
-41:38:0d:29:2b:3e:17:5e:4e:fb:7f:e9:ea:ab:65:f4 backman@web1.example.com
+SHA256:EW/PLNgH/ZmD3PxOn84W8AxhpJkPJzyF5DVk+oQ2/ws backman@lnode3
 The key's randomart image is:
-+---[DSA 1024]----+
-|      .=.        |
-|    . +..        |
-|     o ..        |
-|  . o o  .       |
-| . o = .S .      |
-|  o o o  . .     |
-|   o   .  o E.   |
-|        .o  o    |
-|        .+==.    |
-+-----------------+
++---[RSA 2048]----+
+|        . ..+B   |
+|         oooXo.  |
+|        . +#oo.  |
+|         =.*@B o |
+|        S o B+%  |
+|           o  .* |
+|             E .+|
+|              o++|
+|              o=o|
++----[SHA256]-----+
 
 
 + Authorize the key for connect into it without password:
 
-backman@web1:~$ cat ~/.ssh/id_dsa.pub >> ~/.ssh/authorized_keys
+backman@web1:~$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 
 
 + Ensure that ssh is running and rsync installed.
@@ -101,18 +100,18 @@ Prerequisites:
 + Copy the private key from the user "backman" at "web1.example.com" into .ssh/ folder:
 
 root@backups:~# cd .ssh/
-root@backups:~/.ssh# scp root@web1.example.com:/home/backman/.ssh/id_dsa id_dsa-backman
+root@backups:~/.ssh# scp root@web1.example.com:/home/backman/.ssh/id_rsa id_rsa-backman
 root@web1.example.com's password: 
-id_dsa                                                                                      100%  668     0.7KB/s   00:00    
-root@backups:~/.ssh# chmod 700 id_dsa-backman
+id_rsa                                                                                      100%  668     0.7KB/s   00:00    
+root@backups:~/.ssh# chmod 700 id_rsa-backman
 
 
 + Configure ssh for connect to "web1" with the user "backman" and its key.
 
 root@backups:~/.ssh# cat >> ~/.ssh/config << EOF
-> Host web1.example.com
->   IdentityFile /root/.ssh/id_dsa-backman
-> EOF
+Host web1.example.com
+  IdentityFile /root/.ssh/id_rsa-backman
+EOF
 
 
 + Test it!, don't continue until you can connect to "web1.example.com" with the
@@ -134,6 +133,17 @@ backman@web1:~$
 ==============================--------------------------
 
 
++ Install keepconf:
+
+root@backups:~# bash <(curl -Ls https://raw.githubusercontent.com/rfrail3/keepconf/master/keepconf-install.sh)
+
+
++ Be sure that git is configured correctly with your name an email. Maybe you have already set them:
+
+root@backups:~# git config user.email || git config --global user.email "you@example.com"
+root@backups:~# git config user.name || git config --global user.name "Your Name"
+
+
 + Set the default backup user for keepconf, uncomment the rsync_user line and change the user to "backman":
 
 root@backups:~# vi /etc/keepconf/keepconf.cfg
@@ -143,7 +153,7 @@ root@backups:~# vi /etc/keepconf/keepconf.cfg
 
 + Remove the example conf files, you won't need it:
 
-root@backups:~# rm -rf /etc/keepconf/hosts/*
+root@backups:~# rm /etc/keepconf/hosts/*
 
 
 + Create a file called "/etc/keepconf/hosts/web-servers.lst" and add the following example lines:
@@ -156,27 +166,47 @@ web1.example.com
 /etc/passwd
 /var/lib/dpkg/status
 
-+ Initialize repository:
 
-root@backups:~# keepconf -i
-Initialized empty Git repository in /var/keepconf/hosts/.git/
++ Set both files on the variables inside "/etc/keepconf/keepconf.cfg" and remove 
+'# Or / And sample .. list' content next to them too:
+
+list_hosts = /etc/keepconf/hosts/web-servers.lst
+
+list_files = /etc/keepconf/files/web-files.lst
+
+
 
 + Run it! (In this example, with "-s" for reduce output): 
 
 root@backups:~# keepconf -s
+- - -
+- -
 - Processing: /etc/keepconf/keepconf.cfg
+- Initialize local repository on: /var/keepconf/hosts/
+Initialized empty Git repository in /var/keepconf/hosts/.git/
+- -
 - Fetching start
+- Reading hosts list: /etc/keepconf/hosts/web-servers.lst
+- Reading files list: /etc/keepconf/files/web-files.lst
+- Finding exec files in: /etc/keepconf/pre-get.d/
 - Fetching host: web1.example.com
-- Finding files in /etc/keepconf/post-get.d/
+- Finding exec files in: /etc/keepconf/post-get.d/
 - Processing: /etc/keepconf/post-get.d/01-remove-binary
+  Script -> Removing binary files
 - Fetching done
+- -
 - Committing start
+- Finding files in /etc/keepconf/pre-commit.d/
+- Processing: /etc/keepconf/pre-commit.d/01-add-git-ignore
+  Script -> Adding files to .gitignore
 - Committing into local repository
 [master (root-commit) f8cc8aa] Keepconf commit at 13:27:21 - Tuesday/August/2015 Hosts ok: [1] web1.example.com Hosts bad: [0]
  Committer: root <root@backups.example.com>
- 2 files changed, 8359 insertions(+)
+ 3 files changed, 8359 insertions(+)
+ create mode 100644 .gitignore
  create mode 100644 web1.example.com/etc/passwd
  create mode 100644 web1.example.com/var/lib/dpkg/status
+- Finding files in /etc/keepconf/post-commit.d/
 - Committing done
 - 
 - Hosts rsync'ed: [1] web1.example.com
@@ -184,6 +214,7 @@ root@backups:~# keepconf -s
 - Fetched in: 0.44 seconds
 - Committed in: 0.04 seconds
 - Completed in: 0.48 seconds
+- Monitor file: /var/tmp/keepconf/keepconf.csv
 
 
 + Now, the files from "web1.example.com" are yet inside "backups.example.com" located where 
@@ -318,10 +349,6 @@ Is it possible to have more than one configuration file, for example, each one f
 
 root@backups:~# cp /etc/keepconf/keepconf.cfg /etc/keepconf/keepconf-dev.cfg
 
-+ Change whatever you consider for the new enviroment.
++ Change whatever you consider for the new enviroment. Avoid mix folders and repositories.
 
-+ Initialize the repository for the new configuration file. Use "-f" option for define the new one.
-
-root@backups:~# keepconf -i -f /etc/keepconf/keepconf-dev.cfg
-
-+ Run "keepconf", both files will be parsed and process.
++ Run "keepconf", both files will be parsed and process using their configured values.

@@ -32,21 +32,14 @@ For this test, rsync user will be root, add the following line under the comment
         # sync_user = backup
         rsync_user = root
 
-Initialize the folders and repository:
-
-        keepconf -i
-
+Run it.
 Some sample files are located inside "/etc/keepconf/hosts" and "/etc/keepconf/files" for backup all "/etc/*" content in "localhost" plus some commented examples.
-Run the command for backup them:
 
         keepconf
 
-Now, inside the destionation folder, there are all the files fetched:
+Now, inside the destionation folder, there are all the files fetched and the git repo:
 
-        cd /var/keepconf/hosts/localhost
-
-And a git repo tracking the files:
-
+        cd /var/keepconf/hosts/localhost && ls
         git log
 
 

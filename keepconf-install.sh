@@ -57,13 +57,14 @@ fi
 # Temporary dir for clone repo into it
 F_TMP1=`mktemp -d`
 
-echo "Keepconf installation script"
+echo ""
+echo "++ Keepconf installation script ++"
 echo ""
 
-echo "Clonning repository..."
+echo "+ Clonning repository..."
 git clone https://github.com/rfrail3/keepconf.git ${F_TMP1}
 
-echo "Creating paths..."
+echo "+ Creating paths..."
 mkdir ${D_CNF}
 mkdir ${D_CNF}/hosts
 mkdir ${D_CNF}/files
@@ -72,18 +73,20 @@ mkdir ${D_CNF}/post-get.d
 mkdir ${D_CNF}/pre-commit.d
 mkdir ${D_CNF}/post-commit.d
 
-echo "Copying files..."
+echo "+ Copying files..."
 cp ${F_TMP1}/src/keepconf ${D_BIN}/keepconf
 cp ${F_TMP1}/src/keepconf.cfg ${D_CNF}/
 cp -r ${F_TMP1}/src/post-get.d/* ${D_CNF}/post-get.d/
 cp -r ${F_TMP1}/src/pre-commit.d/* ${D_CNF}/pre-commit.d/
 cp -r ${F_TMP1}/src/hosts/* ${D_CNF}/hosts/
 cp -r ${F_TMP1}/src/files/* ${D_CNF}/files/
-chmod 744 ${D_CNF}/post-get.d/*
+chmod 644 ${D_CNF}/post-*/*txt
+chmod 644 ${D_CNF}/pre-*/*txt
 chmod 744 ${D_BIN}/keepconf
 
 cd ${D_CNF} && ls
 
-echo "Instalation Complete, configure as your needs"
-echo "Don't forget an entry line in cron for schedule the process"
-echo "Enjoy!"
+echo "+ "
+echo "+ Instalation Complete, configure as your needs"
+echo "+ Don't forget an entry line in cron for schedule the process"
+echo "+ Enjoy!"
