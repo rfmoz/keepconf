@@ -135,7 +135,7 @@ backman@web1:~$
 
 + Install keepconf:
 
-root@backups:~# bash <(curl -Ls https://raw.githubusercontent.com/rfrail3/keepconf/master/keepconf-install.sh)
+root@backups:~# bash <(curl -Ls https://raw.githubusercontent.com/rfmoz/keepconf/master/keepconf-install.sh)
 
 
 + Be sure that git is configured correctly with your name an email. Maybe you have already set them:

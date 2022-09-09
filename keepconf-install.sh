@@ -62,7 +62,7 @@ echo "++ Keepconf installation script ++"
 echo ""
 
 echo "+ Clonning repository..."
-git clone https://github.com/rfrail3/keepconf.git ${F_TMP1}
+git clone https://github.com/rfmoz/keepconf.git ${F_TMP1}
 
 echo "+ Creating paths..."
 mkdir ${D_CNF}
