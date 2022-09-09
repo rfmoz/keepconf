@@ -636,7 +636,7 @@ def set_conf(arg, file_conf):
     for k, v in c.items():
         if v is False and k in ('d_dest',):
             logging.error('Value "%s" required on configuration file %s', str(k), str(file_conf))
-            sys.exit(-1)
+            sys.exit(1)
 
     return c
 
@@ -658,7 +658,7 @@ def main():
         conf_flst = sorted(glob.glob(arg.config + '*.cfg'))
     else:
         logging.error('Invalid configuration file/path')
-        sys.exit(-1)
+        sys.exit(1)
 
     logging.info('Files for process: %s', str(len(conf_flst)))
 

@@ -15,7 +15,7 @@ Indeed, it can:
 
 Clone the repository or copy the installation script and execute it. Install all the python modules required with pip or with your preferred package manager:
 
-        curl -k 'https://raw.githubusercontent.com/rfrail3/keepconf/master/keepconf-install.sh' > keepconf-install.sh
+        curl -k 'https://raw.githubusercontent.com/rfmoz/keepconf/master/keepconf-install.sh' > keepconf-install.sh
         bash keepconf-install.sh
 
 For this guide, a ssh connection to localhost is enought, but normally, a ssh connection to remote hosts its required:
